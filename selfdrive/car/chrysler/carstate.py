@@ -3,9 +3,8 @@ from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
-
-import numpy as np
+from openpilot.selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS, ChryslerFlags
+from common.params import Params
 
 ButtonType = car.CarState.ButtonEvent.Type
 
@@ -37,6 +36,8 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["GEAR"]["PRNDL"]
 
     self.lkasHeartbit = None
+    self.above_steer_angle_alert = False
+    self.steerNoMinimum = Params().get_bool("jvePilot.settings.steer.noMinimum")
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -101,7 +102,7 @@ class CarState(CarStateBase):
       ret.steerFaultTemporary = cp.vl["EPS_3"]["DASM_FAULT"] == 1
     else:
       if abs(ret.steeringAngleDeg) > 200:
-        self.above_steer_angle_alert = True
+        self.above_steer_angle_alert = True and self.steerNoMinimum
       elif abs(ret.steeringAngleDeg) < 180:
         self.above_steer_angle_alert = False
 

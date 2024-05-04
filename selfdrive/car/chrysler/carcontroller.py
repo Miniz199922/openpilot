@@ -4,7 +4,6 @@ from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits
 from openpilot.selfdrive.car.chrysler import chryslercan
 from openpilot.selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
-from openpilot.selfdrive.car.interfaces import FORWARD_GEARS
 
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MIN, V_CRUISE_MIN_IMPERIAL
 from common.conversions import Conversions as CV
@@ -86,28 +85,33 @@ class CarController:
     new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
     if self.frame % self.params.STEER_STEP == 0 or abs(new_steer - int(self.apply_steer_last) > self.cachedParams.get_float('jvePilot.settings.steer.chillLevel', 1000)):
       # TODO: can we make this more sane? why is it different for all the cars?
-      high_steer = self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED
+      managed_lkas_control_bit = self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED
       lkas_control_bit = self.lkas_control_bit_prev
       if self.steerNoMinimum:
-        lkas_control_bit = CC.latActive or not high_steer  # never turn off vehicles that can already low steer
+        lkas_control_bit = CC.latActive
       elif CS.out.vEgo > self.CP.minSteerSpeed:
         lkas_control_bit = True
-      elif high_steer:
+      elif managed_lkas_control_bit:
         if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
           lkas_control_bit = False
       elif self.CP.carFingerprint in RAM_CARS:
         if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
           lkas_control_bit = False
 
-      if CC.latActive and not self.last_aolc_ready:
-        self.next_lkas_control_change = max(self.frame + 70, self.next_lkas_control_change)
-      self.last_aolc_ready = CC.latActive
+      if managed_lkas_control_bit:
+        if CC.latActive and not self.last_aolc_ready:
+          self.next_lkas_control_change = max(self.frame + 70, self.next_lkas_control_change)
+        self.last_aolc_ready = CC.latActive
 
-      # EPS faults if LKAS re-enables too quickly
-      lkas_control_bit = lkas_control_bit and (self.frame > self.next_lkas_control_change)
+        # EPS faults if LKAS re-enables too quickly
+        lkas_control_bit = lkas_control_bit and (self.frame > self.next_lkas_control_change)
 
-      if not lkas_control_bit and self.lkas_control_bit_prev:
-        self.next_lkas_control_change = self.frame + 200
+        if not lkas_control_bit and self.lkas_control_bit_prev:
+          self.next_lkas_control_change = self.frame + 200
+      else:
+        # never turn off for vehicles that can steer at low speeds
+        lkas_control_bit = lkas_control_bit or self.lkas_control_bit_prev
+
       self.lkas_control_bit_prev = lkas_control_bit
 
       # steer torque
