@@ -99,9 +99,9 @@ class CarController:
         if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
           lkas_control_bit = False
 
-      if not self.lkas_control_bit_prev and CC.jvePilotState.carControl.aolcAvailable and CC.jvePilotState.carControl.aolcAvailable != self.last_aolc_ready:
-        self.next_lkas_control_change = self.frame + 70
-      self.last_aolc_ready = CC.jvePilotState.carControl.aolcAvailable
+      if CC.latActive and not self.last_aolc_ready:
+        self.next_lkas_control_change = max(self.frame + 70, self.next_lkas_control_change)
+      self.last_aolc_ready = CC.latActive
 
       # EPS faults if LKAS re-enables too quickly
       lkas_control_bit = lkas_control_bit and (self.frame > self.next_lkas_control_change)
