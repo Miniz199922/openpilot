@@ -6,6 +6,8 @@ from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS, ChryslerFlags
 from common.params import Params
 
+import numpy as np
+
 ButtonType = car.CarState.ButtonEvent.Type
 
 CHECK_BUTTONS = {ButtonType.cancel: ["CRUISE_BUTTONS", 'ACC_Cancel'],
