@@ -44,7 +44,7 @@ class CarController:
     self.autoFollowDistanceLock = None
     self.button_frame = 0
     self.last_target = 0
-    self.last_aolc_ready = False
+    self.last_lat_active = False
 
   def update(self, CC, CS, now_nanos):
     can_sends = []
@@ -84,9 +84,14 @@ class CarController:
     # steering
     new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
     if self.frame % self.params.STEER_STEP == 0 or abs(new_steer - int(self.apply_steer_last) > self.cachedParams.get_float('jvePilot.settings.steer.chillLevel', 1000)):
+      manage_lkas_control_bit = self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED
       lkas_control_bit = self.lkas_control_bit_prev
       if self.steerNoMinimum:
         lkas_control_bit = CC.latActive
+
+        if CC.latActive and not self.last_lat_active:
+          self.next_lkas_control_change = max(self.frame + 70, self.next_lkas_control_change)
+        self.last_lat_active = CC.latActive
       elif CS.out.vEgo > self.CP.minSteerSpeed:
         lkas_control_bit = True
       else:
@@ -95,17 +100,12 @@ class CarController:
           lkas_control_bit = False
 
       if self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:  # manage the lkas control bit for these vehicles
-        if CC.latActive and not self.last_aolc_ready:
-          self.next_lkas_control_change = max(self.frame + 70, self.next_lkas_control_change)
-        self.last_aolc_ready = CC.latActive
-
         # EPS faults if LKAS re-enables too quickly
         lkas_control_bit = lkas_control_bit and (self.frame > self.next_lkas_control_change)
 
         if not lkas_control_bit and self.lkas_control_bit_prev:
           self.next_lkas_control_change = self.frame + 200
-      else:
-        # never turn off for vehicles that can steer at low speeds
+      else:  # never turn off for vehicles that can steer at low speeds
         lkas_control_bit = lkas_control_bit or self.lkas_control_bit_prev
 
       self.lkas_control_bit_prev = lkas_control_bit
