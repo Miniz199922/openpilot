@@ -72,7 +72,7 @@ def create_lkas_heartbit(packer, lkas_disabled, lkasHeartbit):
 def create_das_3_standstill(packer, das_3):
   # DAS_3
   values = das_3.copy()  # forward what we parsed
-  values["COUNTER"] = das_3["COUNTER"] + 1 % 0x10
+  values["COUNTER"] = (das_3["COUNTER"] + 1) % 0x10
   values['ACC_AVAILABLE'] = 1
   values['ACC_ACTIVE'] = 1
 
