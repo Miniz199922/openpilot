@@ -46,6 +46,7 @@ class CarController:
     self.button_frame = 0
     self.last_target = 0
     self.last_aolc_ready = False
+    self.last_das_3_counter = -1
 
   def update(self, CC, CS, now_nanos):
     can_sends = []
@@ -120,6 +121,11 @@ class CarController:
       self.apply_steer_last = apply_steer
 
       can_sends.append(chryslercan.create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit))
+
+    if CS.das_3 is not None:
+      if CS.das_3["COUNTER"] != self.last_das_3_counter:
+        can_sends.append(chryslercan.create_das_3(self.packer, CS.das_3))
+      self.last_das_3_counter = CS.das_3["COUNTER"]
 
     self.frame += 1
 
