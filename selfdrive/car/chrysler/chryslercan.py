@@ -74,7 +74,7 @@ def create_das_3(packer, das_3):
   values = das_3.copy()  # forward what we parsed
   values["COUNTER"] = das_3["COUNTER"] + 1 % 0x10
   values["ACC_STANDSTILL"] = 0 # NEVER!
-  return packer.make_can_msg("LKAS_HEARTBIT", 0, values)
+  return packer.make_can_msg("DAS_3", 0, values)
 
 def create_wheel_buttons_command(packer, bus, frame, buttons):
   # WHEEL_BUTTONS (571) Message sent
