@@ -101,8 +101,7 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam)
 
     # ACC brake hold.  Use OP actuators
-    aTarget = c.actuators.accel
-    long_stop = aTarget <= 0 and ret.standstill
+    long_stop = c.actuators.accel <= 0 and ret.standstill
     if c.enabled and long_stop:
       if ret.cruiseState.enabled and ret.cruiseState.standstill:
         c.jvePilotState.carControl.brakeHold = True

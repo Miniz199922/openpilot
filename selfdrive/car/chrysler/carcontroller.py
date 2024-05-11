@@ -125,7 +125,8 @@ class CarController:
     if CS.das_3["COUNTER"] != self.last_das_3_counter:
       self.last_das_3_counter = CS.das_3["COUNTER"]
       if CC.jvePilotState.carControl.brakeHold:
-        can_sends.append(chryslercan.create_das_3_standstill(self.packer, CS.das_3))
+        if not CS.out.cruiseState.enabled:
+          can_sends.append(chryslercan.create_das_3_standstill(self.packer, CS.das_3))
 
     self.frame += 1
 
