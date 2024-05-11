@@ -100,16 +100,8 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
-    # ACC brake hold.  Use OP actuators
-    long_stop = c.actuators.accel <= 0 and ret.standstill
-    if c.enabled and long_stop:
-      if ret.cruiseState.enabled and ret.cruiseState.standstill:
-        c.jvePilotState.carControl.brakeHold = True
-    else:
-      c.jvePilotState.carControl.brakeHold = False
-
+    # Keep standstill if we are holding
     ret.cruiseState.standstill = ret.cruiseState.standstill or c.jvePilotState.carControl.brakeHold
-
 
     # events
     events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low], pcm_enable=False)

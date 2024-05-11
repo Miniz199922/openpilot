@@ -122,11 +122,7 @@ class CarController:
 
       can_sends.append(chryslercan.create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit))
 
-    if CS.das_3["COUNTER"] != self.last_das_3_counter:
-      self.last_das_3_counter = CS.das_3["COUNTER"]
-      if CC.jvePilotState.carControl.brakeHold:
-        if not CS.out.cruiseState.enabled:
-          can_sends.append(chryslercan.create_das_3_standstill(self.packer, CS.das_3))
+    self.brake_hold(can_sends, CC, CS)
 
     self.frame += 1
 
@@ -135,6 +131,20 @@ class CarController:
     new_actuators.steerOutputCan = self.apply_steer_last
 
     return new_actuators, can_sends
+
+  def brake_hold(self, can_sends, CC, CS):
+    # ACC brake hold.  Use OP actuators to know when to go!
+    long_stop = CC.actuators.accel <= 0 and CS.ret.standstill
+    if CC.enabled and long_stop:
+      if CS.ret.cruiseState.enabled and CS.ret.cruiseState.standstill:
+        CC.jvePilotState.carControl.brakeHold = True
+    else:
+      CC.jvePilotState.carControl.brakeHold = False
+
+    if CS.das_3["COUNTER"] != self.last_das_3_counter:
+      self.last_das_3_counter = CS.das_3["COUNTER"]
+      if not CS.out.cruiseState.enabled and CC.jvePilotState.carControl.brakeHold:
+        can_sends.append(chryslercan.create_das_3_standstill(self.packer, CS.das_3))
 
   def wheel_button_control(self, CC, CS, can_sends, enabled, das_bus, cancel, resume):
     button_counter = CS.button_counter
