@@ -7,7 +7,6 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from common.params import Params
 
 ButtonType = car.CarState.ButtonEvent.Type
-LongCtrlState = car.CarControl.Actuators.LongControlState
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
@@ -103,9 +102,9 @@ class CarInterface(CarInterfaceBase):
 
     # ACC brake hold.  Use OP actuators
     aTarget = c.actuators.accel
-    long_stop = c.actuators.longControlState == LongCtrlState.stopping and aTarget <= 0 and ret.standstill
+    long_stop = aTarget <= 0 and ret.standstill
     if c.enabled and long_stop:
-      if ret.cruiseState.standstill:
+      if ret.cruiseState.enabled and ret.cruiseState.standstill:
         c.jvePilotState.carControl.brakeHold = True
     else:
       c.jvePilotState.carControl.brakeHold = False
