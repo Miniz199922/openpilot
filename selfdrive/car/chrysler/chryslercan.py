@@ -83,7 +83,7 @@ def create_das_3_standstill(packer, das_3):
 
   # stay stopped!
   values['ACC_DECEL_REQ'] = 1
-  values['ACC_DECEL'] = 2.
+  values['ACC_DECEL'] = -2.
   values['ACC_STANDSTILL'] = 1
   values['GR_MAX_REQ'] = 1
 
