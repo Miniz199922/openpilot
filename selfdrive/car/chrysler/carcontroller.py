@@ -134,9 +134,9 @@ class CarController:
 
   def brake_hold(self, can_sends, CC, CS):
     # ACC brake hold.  Use OP actuators to know when to go!
-    long_stop = CC.actuators.accel <= 0 and CS.ret.standstill
+    long_stop = CC.actuators.accel <= 0 and CS.out.standstill
     if CC.enabled and long_stop:
-      if CS.ret.cruiseState.enabled and CS.ret.cruiseState.standstill:
+      if CS.out.cruiseState.enabled and CS.out.cruiseState.standstill:
         CC.jvePilotState.carControl.brakeHold = True
     else:
       CC.jvePilotState.carControl.brakeHold = False
