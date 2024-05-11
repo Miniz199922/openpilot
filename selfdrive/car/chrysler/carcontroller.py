@@ -122,7 +122,7 @@ class CarController:
 
       can_sends.append(chryslercan.create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit))
 
-    if CS.das_3 is not None:
+    if CC.enabled:
       if CS.das_3["COUNTER"] != self.last_das_3_counter:
         can_sends.append(chryslercan.create_das_3(self.packer, CS.das_3))
       self.last_das_3_counter = CS.das_3["COUNTER"]
