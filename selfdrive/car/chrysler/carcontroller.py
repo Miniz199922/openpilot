@@ -51,6 +51,8 @@ class CarController:
   def update(self, CC, CS, now_nanos):
     can_sends = []
 
+    self.brake_hold(can_sends, CC, CS)
+
     # cruise buttons
     das_bus = 2 if self.CP.carFingerprint in RAM_CARS else 0
 
@@ -122,8 +124,6 @@ class CarController:
 
       can_sends.append(chryslercan.create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit))
 
-    self.brake_hold(can_sends, CC, CS)
-
     self.frame += 1
 
     new_actuators = CC.actuators.copy()
@@ -176,7 +176,7 @@ class CarController:
         CC.jvePilotState.carControl.autoFollow = True
         CC.jvePilotState.notifyUi = True
 
-      if enabled and not CS.out.brakePressed:
+      if enabled and not CS.out.brakePressed and not CC.jvePilotState.carControl.brakeHold:
         button_counter_offset = [1, 1, 0, None][self.button_frame % 4]
         if button_counter_offset is not None:
           if resume:
