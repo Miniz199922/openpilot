@@ -7,6 +7,7 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from common.params import Params
 
 ButtonType = car.CarState.ButtonEvent.Type
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
@@ -100,8 +101,25 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
+    # ACC brake hold.  Use OP actuators
+    aTarget = c.actuators.accel
+    long_stop = c.actuators.longControlState == LongCtrlState.stopping and aTarget <= 0 and ret.standstill
+    if c.enabled and long_stop:
+      if ret.cruiseState.standstill:
+        c.jvePilotState.carControl.brakeHold = True
+    else:
+      c.jvePilotState.carControl.brakeHold = False
+
+    ret.cruiseState.standstill = ret.cruiseState.standstill or c.jvePilotState.carControl.brakeHold
+
+
     # events
-    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
+    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low], pcm_enable=False)
+
+    if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
+      events.add(car.CarEvent.EventName.pcmEnable)
+    elif not ret.cruiseState.enabled and not c.jvePilotState.carControl.brakeHold:
+      events.add(car.CarEvent.EventName.pcmDisable)
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 0.5):

@@ -14,6 +14,7 @@ from cereal import car
 
 GearShifter = car.CarState.GearShifter
 ButtonType = car.CarState.ButtonEvent.Type
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 V_CRUISE_MIN_IMPERIAL_MS = V_CRUISE_MIN_IMPERIAL * CV.KPH_TO_MS
 V_CRUISE_MIN_MS = V_CRUISE_MIN * CV.KPH_TO_MS
@@ -122,10 +123,10 @@ class CarController:
 
       can_sends.append(chryslercan.create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit))
 
-    if CC.enabled:
-      if CS.das_3["COUNTER"] != self.last_das_3_counter:
-        can_sends.append(chryslercan.create_das_3(self.packer, CS.das_3))
+    if CS.das_3["COUNTER"] != self.last_das_3_counter:
       self.last_das_3_counter = CS.das_3["COUNTER"]
+      if CC.jvePilotState.carControl.brakeHold:
+        can_sends.append(chryslercan.create_das_3_standstill(self.packer, CS.das_3))
 
     self.frame += 1
 
@@ -144,6 +145,9 @@ class CarController:
     self.button_frame += 1
     button_counter_offset = 1
     buttons_to_press = []
+
+    cancel = cancel or (CC.jvePilotState.carControl.brakeHold and CS.out.cruiseState.enabled)
+
     if cancel:
       buttons_to_press = ['ACC_Cancel']
     elif not CS.button_pressed(ButtonType.cancel):
