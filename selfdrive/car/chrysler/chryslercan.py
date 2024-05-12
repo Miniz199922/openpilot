@@ -81,7 +81,7 @@ def create_das_3_standstill(packer, das_3, standstill, stop):
 
     # stay stopped!
     values['ACC_DECEL_REQ'] = 1
-    values['ACC_DECEL'] = -2. + .01 if das_3["COUNTER"] % 2 else 0 # fidget this
+    values['ACC_DECEL'] = -2. + (.01 if das_3["COUNTER"] % 2 else 0) # fidget this
     values['ACC_STANDSTILL'] = das_3["COUNTER"] % 2  # fidget this
     values['ACC_BRK_PREP'] = 0 if standstill else 1
 
