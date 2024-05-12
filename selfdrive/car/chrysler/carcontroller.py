@@ -144,8 +144,8 @@ class CarController:
     if CS.das_3["COUNTER"] != self.last_das_3_counter:
       self.last_das_3_counter = CS.das_3["COUNTER"]
       if CS.out.vEgo < 2.:
-        stop = CC.jvePilotState.carControl.brakeHold and not CS.out.cruiseState.enabled
-        can_sends.append(chryslercan.create_das_3_standstill(self.packer, CS.das_3), stop)
+        stop = CC.jvePilotState.carControl.brakeHold
+        can_sends.append(chryslercan.create_das_3_standstill(self.packer, CS.das_3, stop))
 
   def wheel_button_control(self, CC, CS, can_sends, enabled, das_bus, cancel, resume):
     button_counter = CS.button_counter
