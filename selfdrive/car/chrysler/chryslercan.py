@@ -77,6 +77,7 @@ def create_das_3_standstill(packer, das_3, stop):
   if stop:
     values['ACC_AVAILABLE'] = 1
     values['ACC_ACTIVE'] = 1
+    values['ACC_GO'] = 0
 
     # stay stopped!
     values['ACC_DECEL_REQ'] = 1
