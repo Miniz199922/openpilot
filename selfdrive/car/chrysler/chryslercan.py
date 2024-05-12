@@ -69,7 +69,7 @@ def create_lkas_heartbit(packer, lkas_disabled, lkasHeartbit):
   values["LKAS_DISABLED"] = 1 if lkas_disabled else 0
   return packer.make_can_msg("LKAS_HEARTBIT", 0, values)
 
-def create_das_3_standstill(packer, das_3, standstill, stop):
+def create_das_3_standstill(packer, das_3, standstill, aTarget):
   # DAS_3
   values = das_3.copy()  # forward what we parsed
   values["COUNTER"] = (das_3["COUNTER"] + 1) % 0x10
@@ -81,7 +81,7 @@ def create_das_3_standstill(packer, das_3, standstill, stop):
 
     # stay stopped!
     values['ACC_DECEL_REQ'] = 1
-    values['ACC_DECEL'] = -2. + (.01 if das_3["COUNTER"] % 2 else 0) # fidget this
+    values['ACC_DECEL'] = aTarget
     values['ACC_STANDSTILL'] = das_3["COUNTER"] % 2  # fidget this
     values['ACC_BRK_PREP'] = 0 if standstill else 1
 
