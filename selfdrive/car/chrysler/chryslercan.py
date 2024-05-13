@@ -74,16 +74,15 @@ def create_das_3_standstill(packer, das_3, standstill, aTarget):
   values = das_3.copy()  # forward what we parsed
   values["COUNTER"] = (das_3["COUNTER"] + 1) % 0x10
 
-  if stop:
-    values['ACC_AVAILABLE'] = 1
-    values['ACC_ACTIVE'] = 1
-    values['ACC_GO'] = 0
+  values['ACC_AVAILABLE'] = 1
+  values['ACC_ACTIVE'] = 1
+  values['ACC_GO'] = 0
 
-    # stay stopped!
-    values['ACC_DECEL_REQ'] = 1
-    values['ACC_DECEL'] = aTarget
-    values['ACC_STANDSTILL'] = das_3["COUNTER"] % 2  # fidget this
-    values['ACC_BRK_PREP'] = 0 if standstill else 1
+  # stay stopped!
+  values['ACC_DECEL_REQ'] = 1
+  values['ACC_DECEL'] = aTarget
+  values['ACC_STANDSTILL'] = das_3["COUNTER"] % 2  # fidget this
+  values['ACC_BRK_PREP'] = 0 if standstill else 1
 
   return packer.make_can_msg("DAS_3", 0, values)
 

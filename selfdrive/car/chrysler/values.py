@@ -59,6 +59,7 @@ RAM_DT = {CAR.RAM_1500, }
 RAM_HD = {CAR.RAM_HD, }
 RAM_CARS = RAM_DT | RAM_HD
 
+ACCEL_MIN = -3.5  # m/s^2 max deceleration
 
 @dataclass
 class ChryslerCarInfo(CarInfo):
