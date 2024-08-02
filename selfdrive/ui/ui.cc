@@ -35,28 +35,6 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   return false;
 }
 
-// Blindspot barrier
-void update_line_data(const UIStateSP *s, const cereal::XYZTData::Reader &line,
-                      float y_off, float z_off_left, float z_off_right, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
-  const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-  QPointF left, right;
-  pvd->clear();
-  for (int i = 0; i <= max_idx; i++) {
-    // highly negative x positions  are drawn above the frame and cause flickering, clip to zy plane of camera
-    if (line_x[i] < 0) continue;
-
-    bool l = sp_calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off_left, &left);
-    bool r = sp_calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off_right, &right);
-    if (l && r) {
-      // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
-      if (!allow_invert && pvd->size() && left.y() > pvd->back().y()) {
-        continue;
-      }
-      pvd->push_back(left);
-      pvd->push_front(right);
-    }
-  }
-}
 
 int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
@@ -118,6 +96,12 @@ void update_model(UIState *s,
     scene.lane_line_probs[i] = lane_line_probs[i];
     update_line_data(s, lane_lines[i], 0.025 * scene.lane_line_probs[i], 0, &scene.lane_line_vertices[i], max_idx);
   }
+
+  // lane barriers for blind spot
+  int max_distance_barrier =  40;
+  int max_idx_barrier = std::min(max_idx, get_path_length_idx(lane_lines[0], max_distance_barrier));
+  update_line_data(s, lane_lines[1], 0, -0.05, -0.6, &scene.lane_barrier_vertices[0], max_idx_barrier, false);
+  update_line_data(s, lane_lines[2], 0, -0.05, -0.6, &scene.lane_barrier_vertices[1], max_idx_barrier, false);
 
   // update road edges
   const auto road_edges = model.getRoadEdges();
