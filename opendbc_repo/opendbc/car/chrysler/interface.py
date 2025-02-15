@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from cereal import car
 from panda import Panda
-from openpilot.selfdrive.car import get_safety_config
-from openpilot.selfdrive.car.chrysler.values import CAR, DBC, RAM_HD, RAM_DT, RAM_CARS, HYBRID_CARS, JEEPS, ChryslerFlags
-from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from opendbc.car import get_safety_config, structs
+from opendbc.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags
+from opendbc.car.interfaces import CarInterfaceBase
+
 from common.params import Params
 from common.cached_params import CachedParams
 
@@ -33,8 +33,8 @@ class CarInterface(CarInterfaceBase):
     return maxAccel
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
-    ret.carName = "chrysler"
+  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs) -> structs.CarParams:
+    ret.brand = "chrysler"
     ret.dashcamOnly = candidate in RAM_HD
 
     # radar parsing needs some work, see https://github.com/commaai/openpilot/issues/26842
@@ -43,7 +43,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
 
     # safety config
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
+    ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.chrysler)]
     if candidate in RAM_HD:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_HD
     elif candidate in RAM_DT:
@@ -60,8 +60,8 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= ChryslerFlags.HIGHER_MIN_STEERING_SPEED.value
 
     # Chrysler
-    if candidate in (CAR.CHRYSLER_PACIFICA_2017_HYBRID, CAR.CHRYSLER_PACIFICA_2018, CAR.CHRYSLER_PACIFICA_2018_HYBRID, \
-                     CAR.CHRYSLER_PACIFICA_2019_HYBRID, CAR.CHRYSLER_PACIFICA_2020, CAR.DODGE_DURANGO):
+    if candidate in (CAR.CHRYSLER_PACIFICA_2018, CAR.CHRYSLER_PACIFICA_2018_HYBRID, CAR.CHRYSLER_PACIFICA_2019_HYBRID,
+                     CAR.CHRYSLER_PACIFICA_2020, CAR.DODGE_DURANGO):
       if params.get_bool("jvePilot.settings.steer.pid"):
         ret.lateralTuning.init('pid')
         ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
@@ -113,28 +113,5 @@ class CarInterface(CarInterfaceBase):
     if (0x4FF in fingerprint[0]) or params.get_bool("jvePilot.settings.steer.noMinimum"):
       params.put_bool_nonblocking("jvePilot.settings.steer.noMinimum", True)
       ret.minSteerSpeed = -0.1
-
-    return ret
-
-  def _update(self, c):
-    ret = self.CS.update(self.cp, self.cp_cam)
-
-    #ret.buttonEvents = create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise})
-
-    # events
-    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
-
-    # Low speed steer alert hysteresis logic
-    if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 0.5):
-      self.low_speed_alert = True
-    elif ret.vEgo > (self.CP.minSteerSpeed + 1.):
-      self.low_speed_alert = False
-
-    if self.CS.lkas_button_light:
-      events.add(car.CarEvent.EventName.lkasUserDisabled)
-    elif self.low_speed_alert:
-      events.add(car.CarEvent.EventName.belowSteerSpeed)
-
-    ret.events = events.to_msg()
 
     return ret

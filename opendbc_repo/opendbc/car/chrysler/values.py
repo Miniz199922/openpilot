@@ -1,15 +1,14 @@
 from enum import IntFlag
 from dataclasses import dataclass, field
 
-from cereal import car
-from panda.python import uds
-from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarHarness, CarDocs, CarParts
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
+from opendbc.car.structs import CarParams
+from opendbc.car.docs_definitions import CarHarness, CarDocs, CarParts
+from opendbc.car.fw_query_definitions import FwQueryConfig, Request, p16
 from common.params import Params
 
 params = Params()
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 
 class ChryslerFlags(IntFlag):
@@ -24,7 +23,10 @@ class ChryslerCarDocs(CarDocs):
 
 @dataclass
 class ChryslerPlatformConfig(PlatformConfig):
-  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'))
+  dbc_dict: DbcDict = field(default_factory=lambda: {
+    Bus.pt: 'chrysler_pacifica_2017_hybrid_generated',
+    Bus.radar: 'chrysler_pacifica_2017_hybrid_private_fusion',
+  })
 
 
 @dataclass(frozen=True)
@@ -34,36 +36,32 @@ class ChryslerCarSpecs(CarSpecs):
 
 class CAR(Platforms):
   # Chrysler
-  CHRYSLER_PACIFICA_2017_HYBRID = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2017")],
+  CHRYSLER_PACIFICA_2018_HYBRID = ChryslerPlatformConfig(
+    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2017-18")],
     ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2,
                      gearRatios=[4.70, 2.84, 1.91, 1.38, 1.00, 0.81, 0.70, 0.58],
                      axleRatio=3.25),
   )
-  CHRYSLER_PACIFICA_2018_HYBRID = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2018")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
-  )
   CHRYSLER_PACIFICA_2019_HYBRID = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-23")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-24")],
+    CHRYSLER_PACIFICA_2018_HYBRID.specs,
   )
   CHRYSLER_PACIFICA_2018 = ChryslerPlatformConfig(
     [ChryslerCarDocs("Chrysler Pacifica 2017-18")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    CHRYSLER_PACIFICA_2018_HYBRID.specs,
   )
   CHRYSLER_PACIFICA_2020 = ChryslerPlatformConfig(
     [
       ChryslerCarDocs("Chrysler Pacifica 2019-20"),
       ChryslerCarDocs("Chrysler Pacifica 2021-23", package="All"),
     ],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    CHRYSLER_PACIFICA_2018_HYBRID.specs,
   )
 
   # Dodge
   DODGE_DURANGO = ChryslerPlatformConfig(
     [ChryslerCarDocs("Dodge Durango 2020-21")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    CHRYSLER_PACIFICA_2018_HYBRID.specs,
   )
 
   # Jeep
@@ -83,7 +81,7 @@ class CAR(Platforms):
   RAM_1500_5TH_GEN = ChryslerPlatformConfig(
     [ChryslerCarDocs("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram]))],
     ChryslerCarSpecs(mass=2493., wheelbase=3.88, steerRatio=16.3, minSteerSpeed=14.5),
-    dbc_dict('chrysler_ram_dt_generated', None),
+    {Bus.pt: 'chrysler_ram_dt_generated'},
   )
   RAM_HD_5TH_GEN = ChryslerPlatformConfig(
     [
@@ -91,7 +89,7 @@ class CAR(Platforms):
       ChryslerCarDocs("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
     ],
     ChryslerCarSpecs(mass=3405., wheelbase=3.785, steerRatio=15.61, minSteerSpeed=16.),
-    dbc_dict('chrysler_ram_hd_generated', None),
+    {Bus.pt: 'chrysler_ram_hd_generated'},
   )
 
 
@@ -130,7 +128,7 @@ STEER_THRESHOLD = 120
 RAM_DT = {CAR.RAM_1500_5TH_GEN, }
 RAM_HD = {CAR.RAM_HD_5TH_GEN, }
 RAM_CARS = RAM_DT | RAM_HD
-HYBRID_CARS = {CAR.CHRYSLER_PACIFICA_2017_HYBRID,CAR.CHRYSLER_PACIFICA_2018_HYBRID, CAR.CHRYSLER_PACIFICA_2019_HYBRID}
+HYBRID_CARS = {CAR.CHRYSLER_PACIFICA_2018_HYBRID, CAR.CHRYSLER_PACIFICA_2019_HYBRID}
 JEEPS = {CAR.JEEP_GRAND_CHEROKEE, CAR.JEEP_GRAND_CHEROKEE_2019}
 
 DRIVE_PERSONALITY = [

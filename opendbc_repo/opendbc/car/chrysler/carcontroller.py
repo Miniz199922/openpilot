@@ -1,13 +1,13 @@
 import math
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
-from openpilot.selfdrive.car import apply_meas_steer_torque_limits, button_pressed
-from openpilot.selfdrive.car.chrysler import chryslercan
-from openpilot.selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags, DRIVE_PERSONALITY
-from openpilot.selfdrive.car.interfaces import CarControllerBase
+from opendbc.car import apply_meas_steer_torque_limits, button_pressed
+from opendbc.car.chrysler import chryslercan
+from opendbc.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags, DRIVE_PERSONALITY
+from opendbc.car.interfaces import CarControllerBase
 
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MIN, V_CRUISE_MIN_IMPERIAL
-from openpilot.selfdrive.car.chrysler.long_carcontroller_v1 import LongCarControllerV1
+from opendbc.car.chrysler.long_carcontroller_v1 import LongCarControllerV1
 from common.conversions import Conversions as CV
 from common.cached_params import CachedParams
 from common.params import Params

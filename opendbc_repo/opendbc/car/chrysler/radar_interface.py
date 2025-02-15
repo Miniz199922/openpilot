@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from opendbc.can.parser import CANParser
-from cereal import car
-from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
-from openpilot.selfdrive.car.chrysler.values import DBC
+from opendbc.car import Bus, structs
+from opendbc.car.interfaces import RadarInterfaceBase
+from opendbc.car.chrysler.values import DBC
 from common.params import Params
 from common.cached_params import CachedParams
 from math import tan
@@ -13,8 +13,7 @@ LAST_MSG = max(RADAR_MSGS_C + RADAR_MSGS_D)
 NUMBER_MSGS = len(RADAR_MSGS_C) + len(RADAR_MSGS_D)
 
 def _create_radar_can_parser(car_fingerprint):
-  dbc = DBC[car_fingerprint]['radar']
-  if dbc is None:
+  if Bus.radar not in DBC[car_fingerprint]:
     return None
 
   msg_n = len(RADAR_MSGS_C)
@@ -24,7 +23,7 @@ def _create_radar_can_parser(car_fingerprint):
                       [25] * msg_n +  # 25Hz (0.04s)
                       [25] * msg_n, strict=True))  # 25Hz (0.04s)
 
-  return CANParser(DBC[car_fingerprint]['radar'], messages, 1)
+  return CANParser(DBC[car_fingerprint][Bus.radar], messages, 1)
 
 def _address_to_track(address):
   if address in RADAR_MSGS_C:
@@ -36,7 +35,6 @@ def _address_to_track(address):
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.CP = CP
     self.rcp = _create_radar_can_parser(CP.carFingerprint)
     self.updated_messages = set()
     self.trigger_msg = LAST_MSG
@@ -54,7 +52,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    ret = car.RadarData.new_message()
+    ret = structs.RadarData()
     errors = []
     if not self.rcp.can_valid:
       errors.append("canError")
@@ -65,7 +63,7 @@ class RadarInterface(RadarInterfaceBase):
       trackId = _address_to_track(ii)
 
       if trackId not in self.pts:
-        self.pts[trackId] = car.RadarData.RadarPoint.new_message()
+        self.pts[trackId] = structs.RadarData.RadarPoint()
         self.pts[trackId].trackId = trackId
         self.pts[trackId].aRel = float('nan')
         self.pts[trackId].yvRel = float('nan')

@@ -1,3 +1,18 @@
+Version jvePilot-0.9.8(v3.17)
+========================
+* Version 0.9.7 (2024-06-13)
+  * New driving monitoring model
+    * Reduced false positives related to passengers
+  * Image processing pipeline moved to the ISP
+    * More GPU time for driving models
+    * Power draw reduced 0.5W, which means your device runs cooler
+  * Added toggle to enable driver monitoring even when openpilot is not engaged
+  * Enable openpilot longitudinal control for Ford Q3 vehicles
+  * New Toyota TSS2 longitudinal tune
+  * Coming soon
+    * New driving model with gas gating
+    * Training data upload mode
+
 Version jvePilot-0.9.7(v3.16.5)
 ========================
 Visit http://bit.ly/jvereadme for more information
