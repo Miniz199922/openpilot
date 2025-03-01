@@ -124,7 +124,7 @@ static void chrysler_rx_hook(const CANPacket_t *to_push) {
 }
 
 static bool chrysler_tx_hook(const CANPacket_t *to_send) {
-  const SteeringLimits CHRYSLER_STEERING_LIMITS = {
+  const TorqueSteeringLimits CHRYSLER_STEERING_LIMITS = {
     .max_steer = 261,
     .max_rt_delta = 112,
     .max_rt_interval = 250000,
@@ -134,7 +134,7 @@ static bool chrysler_tx_hook(const CANPacket_t *to_send) {
     .type = TorqueMotorLimited,
   };
 
-  const SteeringLimits CHRYSLER_JEEPS_STEERING_LIMITS = {
+  const TorqueSteeringLimits CHRYSLER_JEEPS_STEERING_LIMITS = {
     .max_steer = 261,
     .max_rt_delta = 225, // 6 max rate up * 100Hz send rate * 250000 RT interval / 1000000 = 150 ; 150 * 1.5 for safety pad = 225
     .max_rt_interval = 250000,
@@ -144,7 +144,7 @@ static bool chrysler_tx_hook(const CANPacket_t *to_send) {
     .type = TorqueMotorLimited,
   };
 
-  const SteeringLimits CHRYSLER_RAM_DT_STEERING_LIMITS = {
+  const TorqueSteeringLimits CHRYSLER_RAM_DT_STEERING_LIMITS = {
     .max_steer = 350,
     .max_rt_delta = 112,
     .max_rt_interval = 250000,
@@ -154,7 +154,7 @@ static bool chrysler_tx_hook(const CANPacket_t *to_send) {
     .type = TorqueMotorLimited,
   };
 
-  const SteeringLimits CHRYSLER_RAM_HD_STEERING_LIMITS = {
+  const TorqueSteeringLimits CHRYSLER_RAM_HD_STEERING_LIMITS = {
     .max_steer = 361,
     .max_rt_delta = 182,
     .max_rt_interval = 250000,
@@ -173,7 +173,7 @@ static bool chrysler_tx_hook(const CANPacket_t *to_send) {
     int desired_torque = ((GET_BYTE(to_send, start_byte) & 0x7U) << 8) | GET_BYTE(to_send, start_byte + 1);
     desired_torque -= 1024;
 
-    const SteeringLimits limits = chrysler_platform == CHRYSLER_JEEP ? CHRYSLER_JEEPS_STEERING_LIMITS :
+    const TorqueSteeringLimits limits = chrysler_platform == CHRYSLER_JEEP ? CHRYSLER_JEEPS_STEERING_LIMITS :
                                   chrysler_platform == CHRYSLER_RAM_DT ? CHRYSLER_RAM_DT_STEERING_LIMITS :
                                   chrysler_platform == CHRYSLER_RAM_HD ? CHRYSLER_RAM_HD_STEERING_LIMITS : CHRYSLER_STEERING_LIMITS;
 
