@@ -82,7 +82,6 @@ class Car:
 
     self.can_callbacks = can_comm_callbacks(self.can_sock, self.pm.sock['sendcan'])
 
-    experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
     if CI is None:
       # wait for one pandaState and one CAN packet
       print("Waiting for CAN messages...")
@@ -118,7 +117,7 @@ class Car:
 
     if self.params.get_bool("jvePilot.settings.steer.aolc"):
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.AOLC_ENABLED
-    if experimental_long_allowed:
+    if self.params.get_bool("ExperimentalLongitudinalEnabled"):
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.LONG_ENABLED
 
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
@@ -168,6 +167,7 @@ class Car:
 
     self.is_metric = self.params.get_bool("IsMetric")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
+    self.acc_eco = int(self.params.get("jvePilot.settings.accEco"))
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -200,11 +200,13 @@ class Car:
     self.v_cruise_helper.update_v_cruise(CS, self.sm['carControl'].enabled, self.is_metric)
     if self.sm['carControl'].enabled and not self.CC_prev.enabled:
       # Use CarState w/ buttons from the step selfdrived enables on
-      self.v_cruise_helper.initialize_v_cruise(self.CS_prev, self.experimental_mode)
+      self.v_cruise_helper.initialize_v_cruise(self.CS_prev, self.experimental_mode, self.is_metric)
 
     # TODO: mirror the carState.cruiseState struct?
     CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
     CS.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
+
+    CS.jvePilotCarState.accEco = self.acc_eco
 
     return CS, RD
 
@@ -273,6 +275,7 @@ class Car:
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      self.acc_eco = int(self.params.get("jvePilot.settings.accEco"))
       time.sleep(0.1)
 
   def card_thread(self):

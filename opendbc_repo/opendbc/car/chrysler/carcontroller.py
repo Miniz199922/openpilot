@@ -1,12 +1,13 @@
 import math
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
-from opendbc.car import apply_meas_steer_torque_limits, button_pressed
+from opendbc.car import Bus, DT_CTRL, apply_meas_steer_torque_limits
+from opendbc.car.car_helpers import button_pressed
 from opendbc.car.chrysler import chryslercan
 from opendbc.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags, DRIVE_PERSONALITY
 from opendbc.car.interfaces import CarControllerBase
 
-from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MIN, V_CRUISE_MIN_IMPERIAL
+from openpilot.selfdrive.car.cruise import V_CRUISE_MIN, V_CRUISE_MIN_IMPERIAL
 from opendbc.car.chrysler.long_carcontroller_v1 import LongCarControllerV1
 from common.conversions import Conversions as CV
 from common.cached_params import CachedParams
@@ -22,20 +23,19 @@ AUTO_FOLLOW_LOCK_MS = 3 * CV.MPH_TO_MS
 EXTEND_FUTURE_MAX = 10 * CV.MPH_TO_MS
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+  def __init__(self, dbc_names, CP):
+    super().__init__(dbc_names, CP)
     self.apply_steer_last = 0
-    self.frame = 0
 
     self.hud_count = 0
     self.next_lkas_control_change = 0
     self.lkas_control_bit_prev = False
     self.last_button_frame = 0
 
-    self.packer = CANPacker(dbc_name)
+    self.packer = CANPacker(dbc_names[Bus.pt])
     self.params = CarControllerParams(CP)
 
-    self.sm = messaging.SubMaster(['longitudinalPlan'])
+    self.sm = messaging.SubMaster(['longitudinalPlan', 'selfdriveState'])
     self.settingsParams = Params()
     self.cachedParams = CachedParams()
     self.minAccSetting = V_CRUISE_MIN_MS if self.settingsParams.get_bool("IsMetric") else V_CRUISE_MIN_IMPERIAL_MS
@@ -71,20 +71,34 @@ class CarController(CarControllerBase):
 
     # jvePilot
     if button_pressed(CS.out, ButtonType.lkasToggle, False):
-      CS.lkas_button_light = not CS.lkas_button_light
-      self.settingsParams.put_nonblocking("jvePilot.settings.lkasButtonLight", "1" if CS.lkas_button_light else "0")
+      CS.lkas_disabled = not CS.lkas_disabled
+      self.settingsParams.put_nonblocking("jvePilot.carstate.lkasDisabled", "1" if CS.lkas_disabled else "0")
     if self.frame % 10 == 0:
-      lkas_disabled = CS.lkas_button_light or CS.out.steerFaultPermanent
+      lkas_disabled = CS.lkas_disabled or CS.out.steerFaultPermanent
       new_msg = chryslercan.create_lkas_heartbit(self.packer, lkas_disabled, CS.lkasHeartbit)
       can_sends.append(new_msg)
     self.wheel_button_control(CC, CS, can_sends, CC.enabled, das_bus, CC.cruiseControl.cancel, CC.cruiseControl.resume)
+
+    # autoFollow
+    if CS.auto_follow:
+      follow_inc_button = button_pressed(CS.out, ButtonType.followInc, False)
+      follow_dec_button = button_pressed(CS.out, ButtonType.followDec, False)
+      if (follow_inc_button and follow_inc_button.pressedFrames < 50) or \
+        (follow_dec_button and follow_dec_button.pressedFrames < 50):
+        CS.auto_follow = False
+    else:
+      follow_inc_button = button_pressed(CS.out, ButtonType.followInc)
+      follow_dec_button = button_pressed(CS.out, ButtonType.followDec)
+      if (follow_inc_button and follow_inc_button.pressedFrames >= 50) or \
+        (follow_dec_button and follow_dec_button.pressedFrames >= 50):
+        CS.auto_follow = True
 
     # HUD alerts
     if self.frame % 25 == 0:
       if CS.lkas_car_model != -1:
         can_sends.append(chryslercan.create_lkas_hud(self.packer, self.CP, CC.latActive and self.lkas_control_bit_prev, CC.hudControl.visualAlert,
                                                      self.hud_count, CS.lkas_car_model, CS.auto_high_beam,
-                                                     CC.enabled or CC.jvePilotState.carControl.aolcAvailable, CS.out.cruiseState.available))
+                                                     CC.enabled or CS.out.jvePilotCarState.aolcReady, CS.out.cruiseState.available))
         self.hud_count += 1
 
     # steering
@@ -120,8 +134,8 @@ class CarController(CarControllerBase):
 
     if CC.enabled:
       # auto set profile
-      follow_distance = CC.jvePilotState.carState.accFollowDistance or 0
-      acc_eco = CC.jvePilotState.carControl.accEco or 0
+      follow_distance = CS.out.jvePilotCarState.accFollowDistance or 0
+      acc_eco = CS.out.jvePilotCarState.accEco or 0
       personality = acc_eco if CS.longControl else DRIVE_PERSONALITY[acc_eco][follow_distance]
       if personality != self.last_personality:
         self.last_personality = personality
@@ -159,7 +173,7 @@ class CarController(CarControllerBase):
               buttons_to_press = [self.auto_follow_button(CC, CS), self.hybrid_acc_button(CC, CS)]
 
       # ACC Auto enable
-      if self.auto_enable_acc and self.frame < 50:
+      if self.auto_enable_acc and self.frame < 100 and self.frame % 3 == 0:
         if not CS.out.cruiseState.available:
           buttons_to_press.append("ACC_OnOff")
         else:
@@ -173,9 +187,9 @@ class CarController(CarControllerBase):
   def hybrid_acc_button(self, CC, CS):
     # Move the adaptive curse control to the target speed
     eco_limit = None
-    if CC.jvePilotState.carControl.accEco == 1:
+    if CS.out.jvePilotCarState.accEco == 1:
       eco_limit = self.cachedParams.get_float('jvePilot.settings.accEco.speedAheadLevel1', 1000)
-    elif CC.jvePilotState.carControl.accEco == 2:
+    elif CS.out.jvePilotCarState.accEco == 2:
       eco_limit = self.cachedParams.get_float('jvePilot.settings.accEco.speedAheadLevel2', 1000)
 
     if len(self.sm['longitudinalPlan'].speeds):
@@ -188,7 +202,7 @@ class CarController(CarControllerBase):
     if eco_limit:
       target = min(target, CS.out.vEgo + (eco_limit * CV.MPH_TO_MS))
 
-    target = math.ceil(min(CC.jvePilotState.carControl.vMaxCruise, target) * self.round_to_unit)
+    target = math.floor(min(CS.out.vCruise, target) * self.round_to_unit)
     current = round(CS.out.cruiseState.speed * self.round_to_unit)
     minSetting = round(self.minAccSetting * self.round_to_unit)
 
@@ -198,7 +212,7 @@ class CarController(CarControllerBase):
       return 'ACC_Accel'
 
   def auto_follow_button(self, CC, CS):
-    if CC.jvePilotState.carControl.autoFollow:
+    if CS.out.jvePilotCarState.autoFollow:
       crossover = [0,
                    self.cachedParams.get_float('jvePilot.settings.autoFollow.speed1-2Bars', 1000) * CV.MPH_TO_MS,
                    self.cachedParams.get_float('jvePilot.settings.autoFollow.speed2-3Bars', 1000) * CV.MPH_TO_MS,
@@ -216,10 +230,10 @@ class CarController(CarControllerBase):
       if self.autoFollowDistanceLock is not None and abs(crossover[self.autoFollowDistanceLock] - CS.out.vEgo) > AUTO_FOLLOW_LOCK_MS:
         self.autoFollowDistanceLock = None  # unlock
 
-      if CC.jvePilotState.carState.accFollowDistance != target_follow and (self.autoFollowDistanceLock or target_follow) == target_follow:
+      if CS.out.jvePilotCarState.accFollowDistance != target_follow and (self.autoFollowDistanceLock or target_follow) == target_follow:
         self.autoFollowDistanceLock = target_follow  # going from close to far, use upperbound
 
-        if CC.jvePilotState.carState.accFollowDistance > target_follow:
+        if CS.out.jvePilotCarState.accFollowDistance > target_follow:
           return 'ACC_Distance_Dec'
         else:
           return 'ACC_Distance_Inc'

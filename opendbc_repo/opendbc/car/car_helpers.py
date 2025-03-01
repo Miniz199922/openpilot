@@ -17,6 +17,14 @@ from opendbc.car.chrysler.values import CAR as CHRYSLER_CAR
 FRAME_FINGERPRINT = 100  # 1s
 
 
+def button_pressed(CS, button_type, pressed=True):
+  for b in CS.buttonEvents:
+    if b.type == button_type:
+      if b.pressed == pressed:
+        return b
+      break
+
+
 def load_interfaces(brand_names):
   ret = {}
   for brand_name in brand_names:

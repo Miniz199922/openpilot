@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from panda import Panda
 from opendbc.car import get_safety_config, structs
-from opendbc.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags
+from opendbc.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags, JEEPS
 from opendbc.car.interfaces import CarInterfaceBase
 
 from common.params import Params
@@ -9,7 +9,7 @@ from common.cached_params import CachedParams
 
 params = Params()
 cachedParams = CachedParams()
-ButtonType = car.CarState.ButtonEvent.Type
+ButtonType = structs.CarState.ButtonEvent.Type
 
 class CarInterface(CarInterfaceBase):
   ACCEL_MAX = 2.  # m/s2, high to not limit stock ACC
@@ -22,7 +22,7 @@ class CarInterface(CarInterfaceBase):
   def accel_max(CS):
     maxAccel = CarInterface.ACCEL_MAX
     if CS.longControl:
-      eco = cachedParams.get_float('jvePilot.carState.accEco', 1000)
+      eco = CS.out.jvePilotCarState.accEco
       if eco == 1:
         maxAccel = cachedParams.get_float('jvePilot.settings.accEco.longAccelLevel1', 1000)
       elif eco == 2:
@@ -38,7 +38,7 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = candidate in RAM_HD
 
     # radar parsing needs some work, see https://github.com/commaai/openpilot/issues/26842
-    ret.radarUnavailable = DBC[candidate]['radar'] is None
+    ret.radarUnavailable = False #  DBC[candidate]['radar'] is None
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
 

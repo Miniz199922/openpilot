@@ -60,10 +60,10 @@ class CarSpecificEvents:
       elif CS.vEgo > (self.CP.minSteerSpeed + 1.):
         self.low_speed_alert = False
 
-      if CS.lkas_button_light:
-        events.add(car.CarEvent.EventName.lkasUserDisabled)
+      if CS.jvePilotCarState.lkasDisabled:
+        events.add(EventName.lkasUserDisabled)
       elif self.low_speed_alert:
-        events.add(car.CarEvent.EventName.belowSteerSpeed)
+        events.add(EventName.belowSteerSpeed)
 
     elif self.CP.brand == 'honda':
       events = self.create_common_events(CS, CS_prev, pcm_enable=False)

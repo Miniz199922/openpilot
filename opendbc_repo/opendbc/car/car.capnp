@@ -5,24 +5,6 @@ $Cxx.namespace("cereal");
 
 # ******* events causing controls state machine transition *******
 
-struct JvePilotState {
-  carState @0 :JvePilotState.CarState;
-  carControl @1 :JvePilotState.CarControl;
-
-  struct CarState {
-    accFollowDistance @0 :UInt8;
-    pedalPressedAmount @1 :Float32;
-    longControl @2 :Bool;
-  }
-
-  struct CarControl {
-    autoFollow @0 :Bool;
-    accEco @1 :UInt8;
-    vMaxCruise @2 :Float32;
-    aolcAvailable @3 :Bool;
-  }
-}
-
 # IMPORTANT: This struct is to not be modified so old logs can be parsed
 struct OnroadEventDEPRECATED @0x9b1657f34caf3ad3 {
   name @0 :EventName;
@@ -289,6 +271,7 @@ struct CarState {
     pressed @0 :Bool;
     type @1 :Type;
     pressedFrames @2: UInt32;
+    pressedChanged @3: Bool;
 
     enum Type {
       unknown @0;
@@ -309,9 +292,20 @@ struct CarState {
     }
   }
 
+  struct JvePilotCarState {
+    accFollowDistance @0 :UInt8;
+    pedalPressedAmount @1 :Float32;
+    longControl @2 :Bool;
+    autoFollow @3 :Bool;
+    accEco @4 :UInt8;
+    aolcReady @5 :Bool;
+    lkasDisabled @6 :Bool;
+  }
+
+
   # deprecated
   errorsDEPRECATED @0 :List(OnroadEventDEPRECATED.EventName);
-  jvePilotCarState @19 :JvePilotState.CarState;  # repurposed for jvePilot
+  jvePilotCarState @19 :JvePilotCarState;  # repurposed for jvePilot
   steeringRateLimitedDEPRECATED @29 :Bool;
   canMonoTimesDEPRECATED @12: List(UInt64);
   canRcvTimeoutDEPRECATED @49 :Bool;
@@ -451,7 +445,7 @@ struct CarControl {
 
   gasDEPRECATED @1 :Float32;
   brakeDEPRECATED @2 :Float32;
-  jvePilotState @3 :JvePilotState; # repurposed for jvePilot
+  steeringTorqueDEPRECATED @3 :Float32;
   activeDEPRECATED @7 :Bool;
   rollDEPRECATED @8 :Float32;
   pitchDEPRECATED @9 :Float32;

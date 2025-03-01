@@ -33,7 +33,7 @@ def manager_init() -> None:
     params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
 
   default_params: list[tuple[str, str | bytes]] = [
-    ("jvePilot.carState.accEco", "1"),
+    ("jvePilot.settings.accEco", "1"),
     ("jvePilot.settings.accEco.speedAheadLevel1", "7"),
     ("jvePilot.settings.accEco.speedAheadLevel2", "5"),
     ("jvePilot.settings.accEco.longAccelLevel1", "1.5"),
@@ -55,7 +55,7 @@ def manager_init() -> None:
     ("jvePilot.settings.slowInCurves.speedRatio", "1.0"),
     ("jvePilot.settings.slowInCurves.speedDropOff", "2.0"),
     ("jvePilot.settings.slowInCurves.speedDropOffAngle", "0.0"),
-    ("jvePilot.settings.lkasButtonLight", "0"),
+    ("jvePilot.carstate.lkasDisabled", "0"),
     ("jvePilot.settings.selectedCar", "Auto detect"),
     ("CompletedTrainingVersion", "0"),
     ("DisengageOnAccelerator", "0"),

@@ -3,9 +3,9 @@ import math
 from cereal import car
 from common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip
-from openpilot.selfdrive.car.chrysler import chryslercan
-from openpilot.selfdrive.car.chrysler.long_carcontroller import LongCarController
-from openpilot.selfdrive.car.chrysler.interface import CarInterface
+from opendbc.car.chrysler import chryslercan
+from opendbc.car.chrysler.long_carcontroller import LongCarController
+from opendbc.car.chrysler.interface import CarInterface
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 

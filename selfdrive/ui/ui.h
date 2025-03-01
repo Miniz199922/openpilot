@@ -15,14 +15,6 @@
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/prime_state.h"
 
-#define COLOR_SPEED_GAS_ALPHA(x) nvgRGBA(0, 200, 0, x)
-#define COLOR_SPEED_BRAKE_ALPHA(x) nvgRGBA(200, 0, 0, x)
-
-const int bdr_s = 30;
-const int header_h = 420;
-const int footer_h = 280;
-const int button_bigger = 96;
-
 const int UI_BORDER_SIZE = 30;
 const int UI_HEADER_HEIGHT = 420;
 
@@ -68,14 +60,6 @@ typedef struct UIScene {
   float light_sensor = -1;
   bool started, ignition, is_metric;
   uint64_t started_frame;
-
-  // jvePilot
-  int autoFollowEnabled = -1;
-  int accEco = -1;
-  bool longControl = false;
-  bool cruiseEnabled = false;
-
-  QRect accEco_btn;
 } UIScene;
 
 class UIState : public QObject {
@@ -89,8 +73,6 @@ public:
   }
 
   std::unique_ptr<SubMaster> sm;
-  std::unique_ptr<PubMaster> pm;
-
   UIStatus status;
   UIScene scene = {};
   QString language;

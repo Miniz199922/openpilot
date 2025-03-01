@@ -126,7 +126,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     personalityChanged @91;
     aeb @92;
 
-    soundsUnavailableDEPRECATED @47;
+    lkasUserDisabled @47; # repurposed for jvePilot
   }
 }
 
@@ -841,6 +841,12 @@ struct SelfdriveState {
     mid @2;
     full @3;
   }
+
+  struct JvePilotSelfdriveState {
+    aolcAvailable @0 :Bool;
+  }
+
+  jvePilotSelfdriveState @13 :JvePilotSelfdriveState;  # jvePilot
 }
 
 struct ControlsState @0x97ff69c53601abf1 {
@@ -2323,11 +2329,6 @@ struct ManagerState {
   }
 }
 
-struct JvePilotUIState {
-  autoFollow @0 :Bool;
-  accEco @1 :UInt8;
-}
-
 struct UploaderState {
   immediateQueueSize @0 :UInt32;
   immediateQueueCount @1 :UInt32;
@@ -2569,7 +2570,7 @@ struct Event {
 
     # DO change the name of the field and struct
     # DON'T change the ID (e.g. @107)
-    # DON'T change which struct it points to 
+    # DON'T change which struct it points to
     customReserved0 @107 :Custom.CustomReserved0;
     customReserved1 @108 :Custom.CustomReserved1;
     customReserved2 @109 :Custom.CustomReserved2;
@@ -2625,7 +2626,7 @@ struct Event {
     orbFeaturesSummaryDEPRECATED @58 :Legacy.OrbFeaturesSummary;
     featuresDEPRECATED @10 :Legacy.CalibrationFeatures;
     kalmanOdometryDEPRECATED @65 :Legacy.KalmanOdometry;
-    jvePilotUIState @57 :JvePilotUIState; # repurposed for jvePilot;
+    uiLayoutStateDEPRECATED @57 :Legacy.UiLayoutState;
     pandaStateDEPRECATED @12 :PandaState;
     driverStateDEPRECATED @59 :DriverStateDEPRECATED;
     sensorEventsDEPRECATED @11 :List(SensorEventData);

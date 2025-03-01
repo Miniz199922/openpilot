@@ -1,8 +1,8 @@
 from cereal import car
 from common.params import Params
-from openpilot.selfdrive.car import button_pressed
-from openpilot.selfdrive.car.chrysler.values import HYBRID_CARS
-from openpilot.selfdrive.car.interfaces import FORWARD_GEARS
+from opendbc.car.car_helpers import button_pressed
+from opendbc.car.chrysler.values import HYBRID_CARS
+from opendbc.car.interfaces import FORWARD_GEARS
 
 ButtonType = car.CarState.ButtonEvent.Type
 
@@ -30,14 +30,14 @@ class LongCarController:
 
     accDiff = None
     if button_pressed(CS.out, ButtonType.followInc, False):
-      if CC.jvePilotState.carControl.accEco < 2:
+      if CS.out.jvePilotCarState.accEco < 2:
         accDiff = 1
     elif button_pressed(CS.out, ButtonType.followDec, False):
-      if CC.jvePilotState.carControl.accEco > 0:
+      if CS.out.jvePilotCarState.accEco > 0:
         accDiff = -1
     if accDiff is not None:
-      newEco = CC.jvePilotState.carControl.accEco + accDiff
-      self.settingsParams.put_nonblocking("jvePilot.carState.accEco", str(newEco))
+      newEco = CS.out.jvePilotCarState.accEco + accDiff
+      self.settingsParams.put_nonblocking("jvePilot.settings.accEco", str(newEco))
 
     return True
 

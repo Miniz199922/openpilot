@@ -193,7 +193,7 @@ void safety_tick(const safety_config *safety_config);
 
 // This can be set by the safety hooks
 extern bool controls_allowed;
-extern bool long_allowed = false;
+bool long_allowed = false;
 bool forward_gear = false;
 bool relay_malfunction;
 extern bool gas_pressed;

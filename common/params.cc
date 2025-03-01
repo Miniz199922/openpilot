@@ -88,7 +88,7 @@ private:
 };
 
 std::unordered_map<std::string, uint32_t> keys = {
-    {"jvePilot.carState.accEco", PERSISTENT},
+    {"jvePilot.settings.accEco", PERSISTENT},
     {"jvePilot.settings.accEco.speedAheadLevel1", PERSISTENT},
     {"jvePilot.settings.accEco.speedAheadLevel2", PERSISTENT},
     {"jvePilot.settings.accEco.longAccelLevel1", PERSISTENT},
@@ -110,7 +110,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"jvePilot.settings.slowInCurves.speedRatio", PERSISTENT},
     {"jvePilot.settings.slowInCurves.speedDropOff", PERSISTENT},
     {"jvePilot.settings.slowInCurves.speedDropOffAngle", PERSISTENT},
-    {"jvePilot.settings.lkasButtonLight", PERSISTENT},
+    {"jvePilot.carstate.lkasDisabled", PERSISTENT},
     {"jvePilot.settings.selectedCar", PERSISTENT},
 
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},

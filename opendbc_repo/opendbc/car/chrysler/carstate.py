@@ -2,14 +2,17 @@ from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from opendbc.car.interfaces import CarStateBase
+from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.chrysler.values import DBC, STEER_THRESHOLD, HYBRID_CARS, RAM_CARS
+from opendbc.car.common.conversions import Conversions as CV
+from opendbc.car.interfaces import CarStateBase
 
 import numpy as np
 from common.params import Params
 from common.cached_params import CachedParams
+from opendbc.car.interfaces import FORWARD_GEARS
 
-ButtonType = car.CarState.ButtonEvent.Type
+ButtonType = structs.CarState.ButtonEvent.Type
 
 CHECK_BUTTONS = {ButtonType.cancel: ["CRUISE_BUTTONS", 'ACC_Cancel'],
                  ButtonType.resumeCruise: ["CRUISE_BUTTONS", 'ACC_Resume'],
@@ -27,7 +30,7 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     self.CP = CP
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
 
     self.auto_high_beam = 0
     self.button_counter = 0
@@ -38,12 +41,12 @@ class CarState(CarStateBase):
     else:
       self.shifter_values = can_define.dv["GEAR"]["PRNDL"]
 
-    self.prev_distance_button = 0
-    self.distance_button = 0
+    #self.distance_button = 0
 
     self.settingsParams = Params()
     self.lkasHeartbit = None
-    self.lkas_button_light = self.settingsParams.get_bool("jvePilot.settings.lkasButtonLight")
+    self.lkas_disabled = self.settingsParams.get_bool("jvePilot.carstate.lkasDisabled")
+    self.auto_follow = self.settingsParams.get_bool("jvePilot.settings.autoFollow")
 
     # long control
     self.longControl = False
@@ -61,8 +64,14 @@ class CarState(CarStateBase):
     self.transmission_gear = None
     self.engine_torque = None
 
-  def update(self, cp, cp_cam):
-    ret = car.CarState.new_message()
+  def update(self, can_parsers) -> structs.CarState:
+    cp = can_parsers[Bus.pt]
+    cp_cam = can_parsers[Bus.cam]
+
+    ret = structs.CarState()
+
+    # prev_distance_button = self.distance_butto
+    # self.distance_button = cp.vl["CRUISE_BUTTONS"]["ACC_Distance_Dec"]
 
     button_events = []
     for buttonType in CHECK_BUTTONS:
@@ -152,7 +161,7 @@ class CarState(CarStateBase):
       ret.steerFaultTemporary = cp.vl["EPS_3"]["DASM_FAULT"] == 1
     else:
       if abs(ret.steeringAngleDeg) > 200:
-        self.above_steer_angle_alert = True
+        self.above_steer_angle_alert = (self.CP.minSteerSpeed < 0.)
       elif abs(ret.steeringAngleDeg) < 180:
         self.above_steer_angle_alert = False
 
@@ -168,6 +177,8 @@ class CarState(CarStateBase):
     self.lkas_car_model = cp_cam.vl["DAS_6"]["CAR_MODEL"]
     self.button_counter = cp.vl["CRUISE_BUTTONS"]["COUNTER"]
 
+    # ret.buttonEvents = create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
+
     brake = cp.vl["ESP_8"]["BRK_PRESSURE"]
     gas = cp.vl["ECM_2"]["ACCEL"]
     if brake > 0:
@@ -178,6 +189,10 @@ class CarState(CarStateBase):
       ret.jvePilotCarState.pedalPressedAmount = 0
 
     ret.jvePilotCarState.accFollowDistance = int(min(3, max(0, cp.vl["DAS_4"]['ACC_DISTANCE_CONFIG_2'])))
+    ret.jvePilotCarState.autoFollow = self.auto_follow
+    ret.jvePilotCarState.lkasDisabled = self.lkas_disabled
+    ret.jvePilotCarState.aolcReady = self.cachedParams.get_bool('jvePilot.settings.steer.aolc',1000) \
+                                     and ret.cruiseState.available and ret.gearShifter in FORWARD_GEARS
 
     return ret
 
@@ -193,7 +208,7 @@ class CarState(CarStateBase):
     if pressed or pressed_changed:
       if not pressed_changed:
         pressed_frames += 1
-      button_events.append(car.CarState.ButtonEvent(pressed=pressed, type=button_type, pressedFrames=pressed_frames))
+      button_events.append(car.CarState.ButtonEvent(pressed=pressed, type=button_type, pressedFrames=pressed_frames, pressChanged=pressed_changed))
 
   @staticmethod
   def get_cruise_messages():
@@ -212,8 +227,8 @@ class CarState(CarStateBase):
     return messages
 
   @staticmethod
-  def get_can_parser(CP):
-    messages = [
+  def get_can_parsers(CP):
+    pt_messages = [
       # sig_address, frequency
       ("ESP_1", 50),
       ("EPS_2", 100),
@@ -234,37 +249,36 @@ class CarState(CarStateBase):
     ]
 
     if CP.enableBsm:
-      messages.append(("BSM_1", 2))
+      pt_messages.append(("BSM_1", 2))
 
     if CP.carFingerprint in HYBRID_CARS:
-      messages += CarState.get_hybrid_messages()
+      pt_messages += CarState.get_hybrid_messages()
 
     if CP.carFingerprint in RAM_CARS:
-      messages += [
+      pt_messages += [
         ("EPS_3", 50),
         ("Transmission_Status", 50),
       ]
     else:
-      messages += [
+      pt_messages += [
         ("GEAR", 50),
       ]
-      messages += CarState.get_cruise_messages()
+      pt_messages += CarState.get_cruise_messages()
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
-
-  @staticmethod
-  def get_cam_can_parser(CP):
-    messages = [
+    cam_messages = [
       ("DAS_6", 4),
     ]
 
     if CP.carFingerprint in RAM_CARS:
-      messages += CarState.get_cruise_messages()
+      cam_messages += CarState.get_cruise_messages()
     else:
       # LKAS_HEARTBIT data needs to be forwarded!
       forward_lkas_heartbit_messages = [
         ("LKAS_HEARTBIT", 10),
       ]
-      messages += forward_lkas_heartbit_messages
+      cam_messages += forward_lkas_heartbit_messages
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
+    return {
+      Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
+      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, 2),
+    }
