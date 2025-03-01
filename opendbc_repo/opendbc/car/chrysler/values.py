@@ -5,10 +5,13 @@ from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
 from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarHarness, CarDocs, CarParts
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, p16
-from common.params import Params
 
-params = Params()
 Ecu = CarParams.Ecu
+
+
+class ChryslerSafetyFlags(IntFlag):
+  RAM_DT = 1
+  RAM_HD = 2
 
 
 class ChryslerFlags(IntFlag):
@@ -38,9 +41,7 @@ class CAR(Platforms):
   # Chrysler
   CHRYSLER_PACIFICA_2018_HYBRID = ChryslerPlatformConfig(
     [ChryslerCarDocs("Chrysler Pacifica Hybrid 2017-18")],
-    ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2,
-                     gearRatios=[4.70, 2.84, 1.91, 1.38, 1.00, 0.81, 0.70, 0.58],
-                     axleRatio=3.25),
+    ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2),
   )
   CHRYSLER_PACIFICA_2019_HYBRID = ChryslerPlatformConfig(
     [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-24")],
@@ -67,9 +68,7 @@ class CAR(Platforms):
   # Jeep
   JEEP_GRAND_CHEROKEE = ChryslerPlatformConfig(  # includes 2017 Trailhawk
     [ChryslerCarDocs("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk")],
-    ChryslerCarSpecs(mass=1778., wheelbase=2.71, steerRatio=16.7,
-                     gearRatios=[4.71, 3.14, 2.10, 1.67, 1.29, 1.00, 0.84, 0.67],
-                     axleRatio=3.45)
+    ChryslerCarSpecs(mass=1778., wheelbase=2.71, steerRatio=16.7),
   )
 
   JEEP_GRAND_CHEROKEE_2019 = ChryslerPlatformConfig(  # includes 2020 Trailhawk
@@ -95,10 +94,8 @@ class CAR(Platforms):
 
 class CarControllerParams:
   def __init__(self, CP):
-    use_pid = params.get_bool("jvePilot.settings.steer.pid")
+    self.STEER_STEP = 2  # 50 Hz
     self.STEER_ERROR_MAX = 80
-    self.STEER_STEP = 2 if use_pid else 1
-
     if CP.carFingerprint in RAM_HD:
       self.STEER_DELTA_UP = 14
       self.STEER_DELTA_DOWN = 14
@@ -107,20 +104,10 @@ class CarControllerParams:
       self.STEER_DELTA_UP = 6
       self.STEER_DELTA_DOWN = 6
       self.STEER_MAX = 261  # EPS allows more, up to 350?
-    elif CP.carFingerprint in JEEPS:
-      self.STEER_DELTA_UP = 3 if use_pid else 6
-      self.STEER_DELTA_DOWN = 3 if use_pid else 6
-      self.STEER_MAX = 261  # EPS allows more, up to 350?
     else:
       self.STEER_DELTA_UP = 3
       self.STEER_DELTA_DOWN = 3
       self.STEER_MAX = 261  # higher than this faults the EPS
-
-    self.ACC_CONTROL_STEP = 2  # 50Hz
-
-    self.ACCEL_MIN = -3.5
-    self.ACCEL_MAX = 2.0
-    self.INACTIVE_ACCEL = 4.0
 
 
 STEER_THRESHOLD = 120
@@ -128,14 +115,7 @@ STEER_THRESHOLD = 120
 RAM_DT = {CAR.RAM_1500_5TH_GEN, }
 RAM_HD = {CAR.RAM_HD_5TH_GEN, }
 RAM_CARS = RAM_DT | RAM_HD
-HYBRID_CARS = {CAR.CHRYSLER_PACIFICA_2018_HYBRID, CAR.CHRYSLER_PACIFICA_2019_HYBRID}
-JEEPS = {CAR.JEEP_GRAND_CHEROKEE, CAR.JEEP_GRAND_CHEROKEE_2019}
 
-DRIVE_PERSONALITY = [
-  [0, 0, 1, 2],
-  [0, 1, 1, 2],
-  [0, 1, 2, 2],
-]
 
 CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf132)
@@ -154,7 +134,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [CHRYSLER_VERSION_REQUEST],
       [CHRYSLER_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.combinationMeter],
+      whitelist_ecus=[Ecu.abs, Ecu.eps, Ecu.srs, Ecu.fwdRadar, Ecu.combinationMeter],
       rx_offset=CHRYSLER_RX_OFFSET,
       bus=0,
     ),

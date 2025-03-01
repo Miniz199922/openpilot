@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from enum import IntFlag
 
 from opendbc.car import AngleRateLimit, Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
 from opendbc.car.structs import CarParams
@@ -16,10 +17,14 @@ class CarControllerParams:
 
   # When output steering Angle not within range -1311 and 1310,
   #   CANPacker packs wrong angle output to be decoded by panda
-  MAX_STEER_ANGLE = 1310
+  STEER_ANGLE_MAX = 1310
 
   def __init__(self, CP):
     pass
+
+
+class NissanSafetyFlags(IntFlag):
+  ALT_EPS_BUS = 1
 
 
 @dataclass

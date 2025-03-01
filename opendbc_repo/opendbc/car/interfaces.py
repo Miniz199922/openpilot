@@ -19,6 +19,7 @@ from opendbc.car.values import PLATFORMS
 from opendbc.can.parser import CANParser
 
 GearShifter = structs.CarState.GearShifter
+ButtonType = structs.CarState.ButtonEvent.Type
 
 V_CRUISE_MAX = 145
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
@@ -42,8 +43,6 @@ GEAR_SHIFTER_MAP: dict[str, structs.CarState.GearShifter] = {
   'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
 }
 
-FORWARD_GEARS = [GearShifter.drive, GearShifter.low, GearShifter.eco,
-                 GearShifter.sport, GearShifter.manumatic, GearShifter.brake]
 
 class LatControlInputs(NamedTuple):
   lateral_acceleration: float
@@ -105,7 +104,7 @@ class CarInterfaceBase(ABC):
     return self.CC.update(c, self.CS, now_nanos)
 
   @staticmethod
-  def get_pid_accel_limits(CP, CS, current_speed, cruise_speed):
+  def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
@@ -128,8 +127,6 @@ class CarInterfaceBase(ABC):
     ret.minEnableSpeed = platform.config.specs.minEnableSpeed
     ret.minSteerSpeed = platform.config.specs.minSteerSpeed
     ret.tireStiffnessFactor = platform.config.specs.tireStiffnessFactor
-    ret.axleRatio = platform.config.specs.axleRatio
-    ret.gearRatios = [] if platform.config.specs.gearRatios == list[float] else platform.config.specs.gearRatios
     ret.flags |= int(platform.config.flags)
 
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
@@ -188,7 +185,6 @@ class CarInterfaceBase(ABC):
     ret.wheelSpeedFactor = 1.0
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
-    ret.pcmCruiseSpeed = True   # jvePilot just wants to disable pcm speed sync
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
     ret.steerRatioRear = 0.  # no rear steering, at least on the listed cars aboveA
     ret.openpilotLongitudinalControl = False
@@ -247,6 +243,8 @@ class CarInterfaceBase(ABC):
 
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
+
+    ret.buttonEnable = self.CS.update_button_enable(ret.buttonEvents)
 
     # save for next iteration
     self.CS.out = ret
@@ -323,8 +321,8 @@ class CarStateBase(ABC):
 
   def update_steering_pressed(self, steering_pressed, steering_pressed_min_count):
     """Applies filtering on steering pressed for noisy driver torque signals."""
-    self.steering_pressed_cnt += 1 if steering_pressed else -1
-    self.steering_pressed_cnt = float(np.clip(self.steering_pressed_cnt, 0, steering_pressed_min_count * 2))
+    self.steering_pressed_cnt = self.steering_pressed_cnt + 1 if steering_pressed else 0
+    self.steering_pressed_cnt = min(self.steering_pressed_cnt, steering_pressed_min_count + 1)
     return self.steering_pressed_cnt > steering_pressed_min_count
 
   def update_blinker_from_stalk(self, blinker_time: int, left_blinker_stalk: bool, right_blinker_stalk: bool):
@@ -349,6 +347,14 @@ class CarStateBase(ABC):
     self.right_blinker_prev = right_blinker_stalk
 
     return bool(left_blinker_stalk or self.left_blinker_cnt > 0), bool(right_blinker_stalk or self.right_blinker_cnt > 0)
+
+  def update_button_enable(self, buttonEvents: list[structs.CarState.ButtonEvent]):
+    if not self.CP.pcmCruise:
+      for b in buttonEvents:
+        # Enable OP long on falling edge of enable buttons
+        if b.type in (ButtonType.accelCruise, ButtonType.decelCruise) and not b.pressed:
+          return True
+    return False
 
   @staticmethod
   def parse_gear_shifter(gear: str | None) -> structs.CarState.GearShifter:

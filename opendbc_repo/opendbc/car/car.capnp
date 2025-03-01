@@ -214,6 +214,7 @@ struct CarState {
 
   # button presses
   buttonEvents @11 :List(ButtonEvent);
+  buttonEnable @57 :Bool;  # user is requesting enable, usually one frame. set if pcmCruise=False
   leftBlinker @20 :Bool;
   rightBlinker @21 :Bool;
   genericToggle @23 :Bool;
@@ -270,8 +271,6 @@ struct CarState {
   struct ButtonEvent {
     pressed @0 :Bool;
     type @1 :Type;
-    pressedFrames @2: UInt32;
-    pressedChanged @3: Bool;
 
     enum Type {
       unknown @0;
@@ -286,26 +285,12 @@ struct CarState {
       setCruise @9;
       resumeCruise @10;
       gapAdjustCruise @11;
-      followInc @12;
-      followDec @13;
-      lkasToggle @14;
     }
   }
 
-  struct JvePilotCarState {
-    accFollowDistance @0 :UInt8;
-    pedalPressedAmount @1 :Float32;
-    longControl @2 :Bool;
-    autoFollow @3 :Bool;
-    accEco @4 :UInt8;
-    aolcReady @5 :Bool;
-    lkasDisabled @6 :Bool;
-  }
-
-
   # deprecated
   errorsDEPRECATED @0 :List(OnroadEventDEPRECATED.EventName);
-  jvePilotCarState @19 :JvePilotCarState;  # repurposed for jvePilot
+  brakeLightsDEPRECATED @19 :Bool;
   steeringRateLimitedDEPRECATED @29 :Bool;
   canMonoTimesDEPRECATED @12: List(UInt64);
   canRcvTimeoutDEPRECATED @49 :Bool;
@@ -363,13 +348,14 @@ struct CarControl {
 
   orientationNED @13 :List(Float32);
   angularVelocity @14 :List(Float32);
+  currentCurvature @17 :Float32;  # From vehicle model
 
   cruiseControl @4 :CruiseControl;
   hudControl @5 :HUDControl;
 
   struct Actuators {
     # lateral commands, mutually exclusive
-    steer @2: Float32;  # [0.0, 1.0]
+    torque @2: Float32;  # [0.0, 1.0]
     steeringAngleDeg @3: Float32;
     curvature @7: Float32;
 
@@ -380,7 +366,7 @@ struct CarControl {
     # these are only for logging the actual values sent to the car over CAN
     gas @0: Float32;   # [0.0, 1.0]
     brake @1: Float32; # [0.0, 1.0]
-    steerOutputCan @8: Float32;   # value sent over can to the car
+    torqueOutputCan @8: Float32;   # value sent over can to the car
     speed @6: Float32;  # m/s
 
     enum LongControlState @0xe40f3a917d908282{
@@ -640,6 +626,7 @@ struct CarParams {
     chryslerCusw @30;
     psa @31;
     fcaGiorgio @32;
+    rivian @33;
   }
 
   enum SteerControlType {
@@ -718,15 +705,15 @@ struct CarParams {
   enableCameraDEPRECATED @4 :Bool;
   enableApgsDEPRECATED @6 :Bool;
   steerRateCostDEPRECATED @33 :Float32;
-  pcmCruiseSpeed @39 :Bool; # repurposed for jvePilot
+  isPandaBlackDEPRECATED @39 :Bool;
   hasStockCameraDEPRECATED @57 :Bool;
   safetyParamDEPRECATED @10 :Int16;
   safetyModelDEPRECATED @9 :SafetyModel;
   safetyModelPassiveDEPRECATED @42 :SafetyModel = silent;
   minSpeedCanDEPRECATED @51 :Float32;
   communityFeatureDEPRECATED @46: Bool;
-  axleRatio @53 :Float32; # repurposed for jvePilot
-  gearRatios @11 :List(Float32); # repurposed for jvePilot
+  startingAccelRateDEPRECATED @53 :Float32;
+  steerMaxBPDEPRECATED @11 :List(Float32);
   steerMaxVDEPRECATED @12 :List(Float32);
   gasMaxBPDEPRECATED @13 :List(Float32);
   gasMaxVDEPRECATED @14 :List(Float32);

@@ -28,6 +28,11 @@ class CarControllerParams:
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.3, 0.15])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.26])
 
+  # LTA limits
+  # EPS ignores commands above this angle and causes PCS to fault
+  STEER_ANGLE_MAX = 94.9461  # deg
+  MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
+
   def __init__(self, CP):
     if CP.flags & ToyotaFlags.RAISED_ACCEL_LIMIT:
       self.ACCEL_MAX = 2.0
@@ -41,6 +46,14 @@ class CarControllerParams:
     else:
       self.STEER_DELTA_UP = 10       # 1.5s time to peak torque
       self.STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
+
+
+class ToyotaSafetyFlags(IntFlag):
+  # first byte is for EPS scaling factor
+  ALT_BRAKE = (1 << 8)
+  STOCK_LONGITUDINAL = (2 << 8)
+  LTA = (4 << 8)
+  SECOC = (8 << 8)
 
 
 class ToyotaFlags(IntFlag):

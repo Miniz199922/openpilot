@@ -126,7 +126,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     personalityChanged @91;
     aeb @92;
 
-    lkasUserDisabled @47; # repurposed for jvePilot
+    soundsUnavailableDEPRECATED @47;
   }
 }
 
@@ -841,12 +841,6 @@ struct SelfdriveState {
     mid @2;
     full @3;
   }
-
-  struct JvePilotSelfdriveState {
-    aolcAvailable @0 :Bool;
-  }
-
-  jvePilotSelfdriveState @13 :JvePilotSelfdriveState;  # jvePilot
 }
 
 struct ControlsState @0x97ff69c53601abf1 {
@@ -2243,6 +2237,11 @@ struct LiveParametersData {
   steerRatioStd @13 :Float32;
   roll @14 :Float32;
   debugFilterState @16 :FilterState;
+
+  angleOffsetValid @17 :Bool = true;
+  angleOffsetAverageValid @18 :Bool = true;
+  steerRatioValid @19 :Bool = true;
+  stiffnessFactorValid @20 :Bool = true;
 
   yawRateDEPRECATED @7 :Float32;
   filterStateDEPRECATED @15 :LiveLocationKalman.Measurement;
