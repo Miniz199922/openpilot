@@ -271,6 +271,8 @@ struct CarState {
   struct ButtonEvent {
     pressed @0 :Bool;
     type @1 :Type;
+    pressedFrames @2: UInt32;
+    pressedChanged @3: Bool;
 
     enum Type {
       unknown @0;
@@ -285,12 +287,26 @@ struct CarState {
       setCruise @9;
       resumeCruise @10;
       gapAdjustCruise @11;
+      followInc @12;
+      followDec @13;
+      lkasToggle @14;
     }
   }
 
+  struct JvePilotCarState {
+    accFollowDistance @0 :UInt8;
+    pedalPressedAmount @1 :Float32;
+    longControl @2 :Bool;
+    autoFollow @3 :Bool;
+    accEco @4 :UInt8;
+    aolcReady @5 :Bool;
+    lkasDisabled @6 :Bool;
+  }
+
+
   # deprecated
   errorsDEPRECATED @0 :List(OnroadEventDEPRECATED.EventName);
-  brakeLightsDEPRECATED @19 :Bool;
+  jvePilotCarState @19 :JvePilotCarState;  # repurposed for jvePilot
   steeringRateLimitedDEPRECATED @29 :Bool;
   canMonoTimesDEPRECATED @12: List(UInt64);
   canRcvTimeoutDEPRECATED @49 :Bool;
@@ -705,15 +721,15 @@ struct CarParams {
   enableCameraDEPRECATED @4 :Bool;
   enableApgsDEPRECATED @6 :Bool;
   steerRateCostDEPRECATED @33 :Float32;
-  isPandaBlackDEPRECATED @39 :Bool;
+  pcmCruiseSpeed @39 :Bool; # repurposed for jvePilot
   hasStockCameraDEPRECATED @57 :Bool;
   safetyParamDEPRECATED @10 :Int16;
   safetyModelDEPRECATED @9 :SafetyModel;
   safetyModelPassiveDEPRECATED @42 :SafetyModel = silent;
   minSpeedCanDEPRECATED @51 :Float32;
   communityFeatureDEPRECATED @46: Bool;
-  startingAccelRateDEPRECATED @53 :Float32;
-  steerMaxBPDEPRECATED @11 :List(Float32);
+  axleRatio @53 :Float32; # repurposed for jvePilot
+  gearRatios @11 :List(Float32); # repurposed for jvePilot
   steerMaxVDEPRECATED @12 :List(Float32);
   gasMaxBPDEPRECATED @13 :List(Float32);
   gasMaxVDEPRECATED @14 :List(Float32);

@@ -43,6 +43,8 @@ GEAR_SHIFTER_MAP: dict[str, structs.CarState.GearShifter] = {
   'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
 }
 
+FORWARD_GEARS = [GearShifter.drive, GearShifter.low, GearShifter.eco,
+                 GearShifter.sport, GearShifter.manumatic, GearShifter.brake]
 
 class LatControlInputs(NamedTuple):
   lateral_acceleration: float
@@ -104,7 +106,7 @@ class CarInterfaceBase(ABC):
     return self.CC.update(c, self.CS, now_nanos)
 
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
+  def get_pid_accel_limits(CP, CS, current_speed, cruise_speed):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
@@ -127,6 +129,8 @@ class CarInterfaceBase(ABC):
     ret.minEnableSpeed = platform.config.specs.minEnableSpeed
     ret.minSteerSpeed = platform.config.specs.minSteerSpeed
     ret.tireStiffnessFactor = platform.config.specs.tireStiffnessFactor
+    ret.axleRatio = platform.config.specs.axleRatio
+    ret.gearRatios = [] if platform.config.specs.gearRatios == list[float] else platform.config.specs.gearRatios
     ret.flags |= int(platform.config.flags)
 
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
@@ -185,6 +189,7 @@ class CarInterfaceBase(ABC):
     ret.wheelSpeedFactor = 1.0
 
     ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
+    ret.pcmCruiseSpeed = True   # jvePilot just wants to disable pcm speed sync
     ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
     ret.steerRatioRear = 0.  # no rear steering, at least on the listed cars aboveA
     ret.openpilotLongitudinalControl = False
