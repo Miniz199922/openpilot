@@ -214,7 +214,6 @@ extern bool safety_rx_checks_invalid;
 extern bool long_allowed;
 extern bool forward_gear;
 
-
 // for safety modes with torque steering control
 extern int desired_torque_last;       // last desired steer torque
 extern int rt_torque_last;            // last desired torque for real time check
