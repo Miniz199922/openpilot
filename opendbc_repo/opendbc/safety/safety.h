@@ -75,7 +75,7 @@ bool gas_pressed_prev = false;
 bool brake_pressed = false;
 bool brake_pressed_prev = false;
 bool regen_braking = false;
-bool regen_braking_prev = false;
+bool regen_braking_prev = false
 bool cruise_engaged_prev = false;
 struct sample_t vehicle_speed;
 bool vehicle_moving = false;
@@ -85,7 +85,6 @@ bool safety_rx_checks_invalid = false;
 
 bool long_allowed = false;
 bool forward_gear = false;
-
 
 // for safety modes with torque steering control
 int desired_torque_last = 0;       // last desired steer torque
