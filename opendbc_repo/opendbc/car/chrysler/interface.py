@@ -10,10 +10,10 @@ params = Params()
 cachedParams = CachedParams()
 ButtonType = structs.CarState.ButtonEvent.Type
 
-ACCEL_MAX = 2.  # m/s2, high to not limit stock ACC
-ACCEL_MIN = -3.5  # m/s2
-
 class CarInterface(CarInterfaceBase):
+  ACCEL_MAX = 2.  # m/s2, high to not limit stock ACC
+  ACCEL_MIN = -3.5  # m/s2
+
   @staticmethod
   def get_pid_accel_limits(CS, CP, current_speed, cruise_speed):
     return CarInterface.ACCEL_MIN, CarInterface.accel_max(CS)
