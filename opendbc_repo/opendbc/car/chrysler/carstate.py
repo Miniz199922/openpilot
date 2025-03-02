@@ -208,7 +208,7 @@ class CarState(CarStateBase):
     if pressed or pressed_changed:
       if not pressed_changed:
         pressed_frames += 1
-      button_events.append(car.CarState.ButtonEvent(pressed=pressed, type=button_type, pressedFrames=pressed_frames, pressChanged=pressed_changed))
+      button_events.append(car.CarState.ButtonEvent(pressed=pressed, type=button_type, pressedFrames=pressed_frames, pressedChanged=pressed_changed))
 
   @staticmethod
   def get_cruise_messages():
