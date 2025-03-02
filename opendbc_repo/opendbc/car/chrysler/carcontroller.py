@@ -25,7 +25,7 @@ EXTEND_FUTURE_MAX = 10 * CV.MPH_TO_MS
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP):
     super().__init__(dbc_names, CP)
-    self.apply_steer_last = 0
+    self.apply_torque_last = 0
 
     self.hud_count = 0
     self.next_lkas_control_change = 0
@@ -102,7 +102,7 @@ class CarController(CarControllerBase):
         self.hud_count += 1
 
     # steering
-    new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
+    new_steer = int(round(CC.actuators.torque * self.params.STEER_MAX))
     if self.frame % self.params.STEER_STEP == 0:
       lkas_control_bit = self.lkas_control_bit_prev
       if CS.out.vEgo > self.CP.minSteerSpeed or self.steerNoMinimum:
@@ -126,9 +126,9 @@ class CarController(CarControllerBase):
 
       apply_steer = 0
       if CC.latActive and lkas_control_bit:
-        apply_steer = apply_meas_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
+        apply_steer = apply_meas_steer_torque_limits(new_steer, self.apply_torque_last, CS.out.steeringTorqueEps, self.params)
 
-      self.apply_steer_last = apply_steer
+      self.apply_torque_last = apply_steer
 
       can_sends.append(chryslercan.create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit, CC.latActive))
 
