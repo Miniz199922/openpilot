@@ -22,6 +22,7 @@ IMPERIAL_INCREMENT = round(CV.MPH_TO_KPH, 1)  # round here to avoid rounding err
 ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
 CRUISE_LONG_PRESS = 50
+CRUISE_LONGER_PRESS = 30
 CRUISE_NEAREST_FUNC = {
   ButtonType.accelCruise: math.ceil,
   ButtonType.decelCruise: math.floor,
@@ -76,18 +77,30 @@ class VCruiseHelper:
 
     v_cruise_delta = 1. if is_metric else IMPERIAL_INCREMENT
 
-    for b in CS.buttonEvents:
-      if b.type.raw in self.button_timers and not b.pressed:
-        if self.button_timers[b.type.raw] > CRUISE_LONG_PRESS:
-          return  # end long press
+    # use jvePilot's pressedFrames
+    events = [e for e in CS.buttonEvents if e.pressedFrames > 0 and e.type.raw in self.button_timers]
+    for b in events:
+      long_press = b.pressedFrames >= CRUISE_LONG_PRESS
+      if long_press:
+        if (b.pressedFrames - CRUISE_LONG_PRESS) % CRUISE_LONGER_PRESS == 0:  # repeat the long press?
+          button_type = b.type.raw
+          break
+      elif not b.pressed:  # it was a short press
         button_type = b.type.raw
         break
-    else:
-      for k, timer in self.button_timers.items():
-        if timer and timer % CRUISE_LONG_PRESS == 0:
-          button_type = k
-          long_press = True
-          break
+
+  # for b in CS.buttonEvents:
+    #   if b.type.raw in self.button_timers and not b.pressed:
+    #     if self.button_timers[b.type.raw] > CRUISE_LONG_PRESS:
+    #       return  # end long press
+    #     button_type = b.type.raw
+    #     break
+    # else:
+    #   for k, timer in self.button_timers.items():
+    #     if timer and timer % CRUISE_LONG_PRESS == 0:
+    #       button_type = k
+    #       long_press = True
+    #       break
 
     if button_type is None:
       return
@@ -120,7 +133,7 @@ class VCruiseHelper:
         self.button_timers[k] += 1
 
     for b in CS.buttonEvents:
-      if b.pressedChanged and b.type.raw in self.button_timers:
+      if b.type.raw in self.button_timers:
         # Start/end timer and store current state on change of button pressed
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
         self.button_change_states[b.type.raw] = {"standstill": CS.cruiseState.standstill, "enabled": enabled}
@@ -133,7 +146,7 @@ class VCruiseHelper:
     # initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode else V_CRUISE_INITIAL
     initial = V_CRUISE_MIN if is_metric else V_CRUISE_MIN_IMPERIAL
 
-    if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_initialized:
+    if any(b.pressed and b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_initialized:
       self.v_cruise_kph = self.v_cruise_kph_last
     else:
       self.v_cruise_kph = int(round(np.clip(CS.vEgo * CV.MS_TO_KPH, initial, V_CRUISE_MAX)))
