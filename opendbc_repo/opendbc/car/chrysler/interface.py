@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from opendbc.car import get_safety_config, structs
-from opendbc.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, JEEPS, ChryslerFlags, ChryslerSafetyFlags
+from opendbc.car import Bus, get_safety_config, structs
+from opendbc.car.chrysler.values import DBC, CAR, RAM_HD, RAM_DT, RAM_CARS, JEEPS, ChryslerFlags, ChryslerSafetyFlags
 from opendbc.car.interfaces import CarInterfaceBase
 
 from common.params import Params
@@ -38,7 +38,7 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = candidate in RAM_HD
 
     # radar parsing needs some work, see https://github.com/commaai/openpilot/issues/26842
-    ret.radarUnavailable = False # Bus.radar not in DBC[candidate][Bus.radar]
+    ret.radarUnavailable = Bus.radar not in DBC[candidate][Bus.radar]
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
 
