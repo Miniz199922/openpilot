@@ -267,6 +267,8 @@ class CarSpecs:
   minSteerSpeed: float = 0.0  # m/s
   minEnableSpeed: float = -1.0  # m/s
   tireStiffnessFactor: float = 1.0
+  gearRatios: list = list[float]
+  axleRatio: float = 0.0
 
   def override(self, **kwargs):
     return replace(self, **kwargs)
@@ -319,7 +321,7 @@ class PlatformConfig(PlatformConfigBase):
 @dataclass(order=True)
 class ExtraPlatformConfig(PlatformConfigBase):
   car_docs: list[ExtraCarDocs]
-  specs: CarSpecs = CarSpecs(mass=0., wheelbase=0., steerRatio=0.)
+  specs: CarSpecs = CarSpecs(mass=0., wheelbase=0., steerRatio=0., gearRatios=0., axleRatio=0.)
   dbc_dict: DbcDict = field(default_factory=lambda: dict())
 
 

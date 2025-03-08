@@ -83,6 +83,9 @@ bool acc_main_on = false;  // referred to as "ACC off" in ISO 15622:2018
 int cruise_button_prev = 0;
 bool safety_rx_checks_invalid = false;
 
+bool long_allowed = false;
+bool forward_gear = false;
+
 // for safety modes with torque steering control
 int desired_torque_last = 0;       // last desired steer torque
 int rt_torque_last = 0;            // last desired torque for real time check
@@ -328,19 +331,19 @@ void generic_rx_checks(bool stock_ecu_detected) {
   const uint32_t RELAY_TRNS_TIMEOUT = 1U;
 
   // exit controls on rising edge of gas press
-  if (gas_pressed && !gas_pressed_prev && !(alternative_experience & ALT_EXP_DISABLE_DISENGAGE_ON_GAS)) {
+  if (gas_pressed && !gas_pressed_prev && !(alternative_experience & ALT_EXP_DISABLE_DISENGAGE_ON_GAS) && !(alternative_experience & ALT_EXP_AOLC_ENABLED)) {
     controls_allowed = false;
   }
   gas_pressed_prev = gas_pressed;
 
   // exit controls on rising edge of brake press
-  if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
+  if (brake_pressed && (!brake_pressed_prev || vehicle_moving) && !(alternative_experience & ALT_EXP_AOLC_ENABLED)) {
     controls_allowed = false;
   }
   brake_pressed_prev = brake_pressed;
 
   // exit controls on rising edge of regen paddle
-  if (regen_braking && (!regen_braking_prev || vehicle_moving)) {
+  if (regen_braking && (!regen_braking_prev || vehicle_moving) && !(alternative_experience & ALT_EXP_AOLC_ENABLED)) {
     controls_allowed = false;
   }
   regen_braking_prev = regen_braking;

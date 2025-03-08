@@ -116,6 +116,8 @@ class SelfdriveD:
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
+    self.aolc_available = False
+
     # Determine startup event
     self.startup_event = EventName.startup if build_metadata.openpilot.comma_remote and build_metadata.tested_channel else EventName.startupMaster
     if not car_recognized:
@@ -356,11 +358,11 @@ class SelfdriveD:
         self.events.add(EventName.modeldLagging)
 
     # decrement personality on distance button press
-    if self.CP.openpilotLongitudinalControl:
-      if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in CS.buttonEvents):
-        self.personality = (self.personality - 1) % 3
-        self.params.put_nonblocking('LongitudinalPersonality', str(self.personality))
-        self.events.add(EventName.personalityChanged)
+    # if self.CP.openpilotLongitudinalControl:
+    #   if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in CS.buttonEvents):
+    #     self.personality = (self.personality - 1) % 3
+    #     self.params.put_nonblocking('LongitudinalPersonality', str(self.personality))
+    #     self.events.add(EventName.personalityChanged)
 
   def data_sample(self):
     car_state = messaging.recv_one(self.car_state_sock)
@@ -442,6 +444,8 @@ class SelfdriveD:
     ss.alertSound = self.AM.current_alert.audible_alert
     ss.alertHudVisual = self.AM.current_alert.visual_alert
 
+    ss.jvePilotSelfdriveState.aolcAvailable = self.aolc_available
+
     self.pm.send('selfdriveState', ss_msg)
 
     # onroadEvents - logged every second or on change
@@ -456,7 +460,7 @@ class SelfdriveD:
     CS = self.data_sample()
     self.update_events(CS)
     if not self.CP.passive and self.initialized:
-      self.enabled, self.active = self.state_machine.update(self.events)
+      self.enabled, self.active, self.aolc_available = self.state_machine.update(self.events, CS.jvePilotCarState.aolcReady, CS.standstill)
     self.update_alerts(CS)
 
     self.publish_selfdriveState(CS)

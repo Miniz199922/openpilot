@@ -11,7 +11,18 @@ from opendbc.car.interfaces import get_interface_attr
 from opendbc.car.mock.values import CAR as MOCK
 from opendbc.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 
+from openpilot.common.params import Params
+from opendbc.car.chrysler.values import CAR as CHRYSLER_CAR
+
 FRAME_FINGERPRINT = 100  # 1s
+
+
+def button_pressed(CS, button_type, pressed=True):
+  for b in CS.buttonEvents:
+    if b.type == button_type:
+      if b.pressed == pressed:
+        return b
+      break
 
 
 def load_interfaces(brand_names):
@@ -89,6 +100,7 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   disable_fw_cache = os.environ.get('DISABLE_FW_CACHE', False)
   ecu_rx_addrs = set()
+  params = Params()
 
   start_time = time.monotonic()
   if not skip_fw_query:
@@ -132,6 +144,33 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
 
   exact_match = True
   source = CarParams.FingerprintSource.can
+
+  selected = params.get("jvePilot.settings.selectedCar")
+  print(f"Car override selected: {selected}")
+  if selected == b"Grand Cherokee 2018":
+    fw_candidates = [CHRYSLER_CAR.JEEP_GRAND_CHEROKEE]
+    exact_fw_match = True
+  elif selected == b"Grand Cherokee 2019":
+    fw_candidates = [CHRYSLER_CAR.JEEP_GRAND_CHEROKEE_2019]
+    exact_fw_match = True
+  elif selected == b"Pacifica Hybrid":
+    fw_candidates = [CHRYSLER_CAR.CHRYSLER_PACIFICA_2018_HYBRID]
+    exact_fw_match = True
+  elif selected == b"Pacifica Hybrid 2018":
+    fw_candidates = [CHRYSLER_CAR.CHRYSLER_PACIFICA_2018_HYBRID]
+    exact_fw_match = True
+  elif selected == b"Pacifica Hybrid 2019":
+    fw_candidates = [CHRYSLER_CAR.CHRYSLER_PACIFICA_2019_HYBRID]
+    exact_fw_match = True
+  elif selected == b"Pacifica":
+    fw_candidates = [CHRYSLER_CAR.CHRYSLER_PACIFICA_2018]
+    exact_fw_match = True
+  elif selected == b"Pacifica 2020":
+    fw_candidates = [CHRYSLER_CAR.CHRYSLER_PACIFICA_2020]
+    exact_fw_match = True
+  elif selected == b"Durango":
+    fw_candidates = [CHRYSLER_CAR.DODGE_DURANGO]
+    exact_fw_match = True
 
   # If FW query returns exactly 1 candidate, use it
   if len(fw_candidates) == 1:

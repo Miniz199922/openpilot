@@ -212,6 +212,9 @@ extern bool acc_main_on; // referred to as "ACC off" in ISO 15622:2018
 extern int cruise_button_prev;
 extern bool safety_rx_checks_invalid;
 
+extern bool long_allowed;
+extern bool forward_gear;
+
 // for safety modes with torque steering control
 extern int desired_torque_last;       // last desired steer torque
 extern int rt_torque_last;            // last desired torque for real time check
@@ -240,6 +243,9 @@ extern struct sample_t angle_meas;         // last 6 steer angles/curvatures
 // If using this flag, make sure to communicate to your users that a stock safety feature is now disabled.
 #define ALT_EXP_DISABLE_STOCK_AEB 2
 
+// jvePilot Always on Lateral Control
+#define ALT_EXP_AOLC_ENABLED 4
+
 // If using this flag, be aware that harder braking is more likely to lead to rear endings,
 //   and that alone this flag doesn't make braking compliant because there's also a time element.
 // Setting this flag is used for allowing the full -5.0 to +4.0 m/s^2 at lower speeds
@@ -248,6 +254,9 @@ extern struct sample_t angle_meas;         // last 6 steer angles/curvatures
 
 // This flag allows AEB to be commanded from openpilot.
 #define ALT_EXP_ALLOW_AEB 16
+
+// jvePilot Long Control
+#define ALT_EXP_LONG_ENABLED 32
 
 extern int alternative_experience;
 

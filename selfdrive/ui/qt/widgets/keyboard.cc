@@ -143,6 +143,10 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   main_layout->setCurrentIndex(0);
 }
 
+void Keyboard::setKeyboardLayout(int index) {
+  main_layout->setCurrentIndex(index);
+}
+
 void Keyboard::handleCapsPress() {
   shift_state = (shift_state + 1) % 3;
   bool is_uppercase = shift_state > 0;
