@@ -22,14 +22,14 @@ IMPERIAL_INCREMENT = round(CV.MPH_TO_KPH, 1)  # round here to avoid rounding err
 ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
 CRUISE_LONG_PRESS = 50
-CRUISE_LONGER_PRESS = 30
+CRUISE_LONGER_PRESS = 40
 CRUISE_NEAREST_FUNC = {
   ButtonType.accelCruise: math.ceil,
   ButtonType.decelCruise: math.floor,
 }
 CRUISE_INTERVAL_SIGN = {
-  ButtonType.accelCruise: +1,
-  ButtonType.decelCruise: -1,
+  ButtonType.accelCruise: +0.99,
+  ButtonType.decelCruise: -0.99,
 }
 
 
@@ -133,7 +133,7 @@ class VCruiseHelper:
         self.button_timers[k] += 1
 
     for b in CS.buttonEvents:
-      if b.type.raw in self.button_timers:
+      if b.pressedChanged and b.type.raw in self.button_timers:
         # Start/end timer and store current state on change of button pressed
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
         self.button_change_states[b.type.raw] = {"standstill": CS.cruiseState.standstill, "enabled": enabled}
