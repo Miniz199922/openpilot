@@ -3,14 +3,6 @@ import argparse
 from collections import Counter
 from tqdm import tqdm
 
-<<<<<<<< HEAD:panda/tests/safety_replay/replay_drive.py
-from opendbc.safety.tests.libsafety import libsafety_py
-from panda.tests.safety_replay.helpers import package_can_msg, init_segment
-
-# replay a drive to check for safety violations
-def replay_drive(lr, safety_mode, param, alternative_experience, segment=False):
-  safety = libsafety_py.libsafety
-========
 from opendbc.car.carlog import carlog
 from opendbc.safety.tests.libsafety import libsafety_py
 from opendbc.safety.tests.safety_replay.helpers import package_can_msg, init_segment
@@ -19,7 +11,6 @@ from opendbc.safety.tests.safety_replay.helpers import package_can_msg, init_seg
 def replay_drive(msgs, safety_mode, param, alternative_experience):
   safety = libsafety_py.libsafety
   msgs.sort(key=lambda m: m.logMonoTime)
->>>>>>>> openpilot/v0.9.8-03-06:opendbc_repo/opendbc/safety/tests/safety_replay/replay_drive.py
 
   err = safety.set_safety_hooks(safety_mode, param)
   assert err == 0, "invalid safety mode: %d" % safety_mode
@@ -90,7 +81,7 @@ if __name__ == "__main__":
   parser.add_argument("--alternative-experience", type=int, help="Override the alternative experience from the log")
   args = parser.parse_args()
 
-  lr = LogReader(args.route_or_segment_name[0], sort_by_time=True)
+  lr = LogReader(args.route_or_segment_name[0])
 
   if None in (args.mode, args.param, args.alternative_experience):
     CP = lr.first('carParams')
