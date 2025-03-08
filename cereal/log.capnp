@@ -126,7 +126,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     personalityChanged @91;
     aeb @92;
 
-    lkasUserDisabled @47; # repurposed for jvePilot
+    soundsUnavailableDEPRECATED @47;
   }
 }
 
@@ -150,6 +150,10 @@ struct InitData {
   gitCommitDate @21 :Text;
   gitBranch @11 :Text;
   gitRemote @13 :Text;
+
+  # this is source commit for prebuilt branches
+  gitSrcCommit @23 :Text;
+  gitSrcCommitDate @24 :Text;
 
   androidProperties @16 :Map(Text, Text);
 
@@ -841,12 +845,6 @@ struct SelfdriveState {
     mid @2;
     full @3;
   }
-
-  struct JvePilotSelfdriveState {
-    aolcAvailable @0 :Bool;
-  }
-
-  jvePilotSelfdriveState @13 :JvePilotSelfdriveState;  # jvePilot
 }
 
 struct ControlsState @0x97ff69c53601abf1 {

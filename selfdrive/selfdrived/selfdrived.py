@@ -26,6 +26,7 @@ from openpilot.system.version import get_build_metadata
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
+IGNORE_PROCESSES = {"loggerd", "encoderd", "statsd"}
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
 
 ThermalStatus = log.DeviceState.ThermalStatus
@@ -114,8 +115,6 @@ class SelfdriveD:
     self.recalibrating_seen = False
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
-
-    self.aolc_available = False
 
     # Determine startup event
     self.startup_event = EventName.startup if build_metadata.openpilot.comma_remote and build_metadata.tested_channel else EventName.startupMaster
@@ -260,7 +259,7 @@ class SelfdriveD:
       if not_running != self.not_running_prev:
         cloudlog.event("process_not_running", not_running=not_running, error=True)
       self.not_running_prev = not_running
-    if self.sm.recv_frame['managerState'] and not_running:
+    if self.sm.recv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
       self.events.add(EventName.processNotRunning)
     else:
       if not SIMULATION and not self.rk.lagging:
@@ -329,11 +328,11 @@ class SelfdriveD:
     if lac.active and not recent_steer_pressed and not self.CP.notCar:
       clipped_speed = max(CS.vEgo, MIN_LATERAL_CONTROL_SPEED)
       actual_lateral_accel = controlstate.curvature * (clipped_speed**2)
-      desired_lateral_accel = controlstate.desiredCurvature * (clipped_speed**2)
+      desired_lateral_accel = self.sm['modelV2'].action.desiredCurvature * (clipped_speed**2)
       undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
       turning = abs(desired_lateral_accel) > 1.0
-      good_speed = CS.vEgo > 5
-      if undershooting and turning and good_speed and lac.saturated:
+      # TODO: lac.saturated includes speed and other checks, should be pulled out
+      if undershooting and turning and lac.saturated:
         self.events.add(EventName.steerSaturated)
 
     # Check for FCW
@@ -357,11 +356,11 @@ class SelfdriveD:
         self.events.add(EventName.modeldLagging)
 
     # decrement personality on distance button press
-    # if self.CP.openpilotLongitudinalControl:
-    #   if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in CS.buttonEvents):
-    #     self.personality = (self.personality - 1) % 3
-    #     self.params.put_nonblocking('LongitudinalPersonality', str(self.personality))
-    #     self.events.add(EventName.personalityChanged)
+    if self.CP.openpilotLongitudinalControl:
+      if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in CS.buttonEvents):
+        self.personality = (self.personality - 1) % 3
+        self.params.put_nonblocking('LongitudinalPersonality', str(self.personality))
+        self.events.add(EventName.personalityChanged)
 
   def data_sample(self):
     car_state = messaging.recv_one(self.car_state_sock)
@@ -443,8 +442,6 @@ class SelfdriveD:
     ss.alertSound = self.AM.current_alert.audible_alert
     ss.alertHudVisual = self.AM.current_alert.visual_alert
 
-    ss.jvePilotSelfdriveState.aolcAvailable = self.aolc_available
-
     self.pm.send('selfdriveState', ss_msg)
 
     # onroadEvents - logged every second or on change
@@ -459,7 +456,7 @@ class SelfdriveD:
     CS = self.data_sample()
     self.update_events(CS)
     if not self.CP.passive and self.initialized:
-      self.enabled, self.active, self.aolc_available = self.state_machine.update(self.events, CS.jvePilotCarState.aolcReady, CS.standstill)
+      self.enabled, self.active = self.state_machine.update(self.events)
     self.update_alerts(CS)
 
     self.publish_selfdriveState(CS)

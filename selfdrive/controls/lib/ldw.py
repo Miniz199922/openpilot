@@ -2,7 +2,6 @@ from cereal import log
 from openpilot.common.realtime import DT_CTRL
 from openpilot.common.conversions import Conversions as CV
 
-from openpilot.common.params import Params
 
 CAMERA_OFFSET = 0.04
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
@@ -13,8 +12,6 @@ class LaneDepartureWarning:
     self.left = False
     self.right = False
     self.last_blinker_frame = 0
-
-    self.device_offset = float(Params().get('jvePilot.settings.deviceOffset'))
 
   def update(self, frame, modelV2, CS, CC):
     if CS.leftBlinker or CS.rightBlinker:
@@ -31,8 +28,8 @@ class LaneDepartureWarning:
       r_lane_change_prob = desire_prediction[log.Desire.laneChangeRight]
 
       lane_lines = modelV2.laneLines
-      l_lane_close = left_lane_visible and (lane_lines[1].y[0] > -(1.08 + CAMERA_OFFSET + self.device_offset))
-      r_lane_close = right_lane_visible and (lane_lines[2].y[0] < (1.08 - CAMERA_OFFSET + self.device_offset))
+      l_lane_close = left_lane_visible and (lane_lines[1].y[0] > -(1.08 + CAMERA_OFFSET))
+      r_lane_close = right_lane_visible and (lane_lines[2].y[0] < (1.08 - CAMERA_OFFSET))
 
       self.left = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
       self.right = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)

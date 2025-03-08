@@ -1,15 +1,12 @@
 from cereal import log
-from openpilot.selfdrive.selfdrived.events import Events, ET, EVENTS
+from openpilot.selfdrive.selfdrived.events import Events, ET
 from openpilot.common.realtime import DT_CTRL
 
 State = log.SelfdriveState.OpenpilotState
-EventName = log.OnroadEvent.EventName
 
 SOFT_DISABLE_TIME = 3  # seconds
 ACTIVE_STATES = (State.enabled, State.softDisabling, State.overriding)
 ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
-
-AOLC_IGNORED_EVENTS = [EventName.buttonCancel, EventName.pedalPressed, EventName.resumeBlocked]
 
 class StateMachine:
   def __init__(self):
@@ -17,7 +14,7 @@ class StateMachine:
     self.state = State.disabled
     self.soft_disable_timer = 0
 
-  def update(self, events: Events, aolc_ready, standstill):
+  def update(self, events: Events):
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
     self.soft_disable_timer = max(0, self.soft_disable_timer - 1)
@@ -97,26 +94,5 @@ class StateMachine:
     active = self.state in ACTIVE_STATES
     if active:
       self.current_alert_types.append(ET.WARNING)
-    elif aolc_ready:
-      self.current_alert_types.append(ET.WARNING)
-      if self.has_blocking_events([EventName.wrongCarMode], events):
-        events.add(EventName.pcmDisable),
-        self.current_alert_types.append(ET.USER_DISABLE)
-      elif self.has_events_blocking_aolc(events) and not standstill:
-        for e in AOLC_IGNORED_EVENTS:
-          if e in events.names:
-            events.names.remove(e)
-        self.current_alert_types.append(ET.NO_ENTRY)
-
-    return enabled, active, aolc_ready and not self.has_events_blocking_aolc(events)
-
-  @staticmethod
-  def has_events_blocking_aolc(events):
-    no_entries = list(filter(lambda e: ET.NO_ENTRY in EVENTS.get(e, {}), events.names))
-    return any(e not in AOLC_IGNORED_EVENTS for e in no_entries)
-
-  @staticmethod
-  def has_blocking_events(states, events):
-    no_entries = list(filter(lambda e: ET.NO_ENTRY in EVENTS.get(e, {}), events.names))
-    return any(e in states for e in no_entries)
+    return enabled, active
 
