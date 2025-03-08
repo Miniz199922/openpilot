@@ -30,7 +30,7 @@ class ChryslerCarDocs(CarDocs):
 @dataclass
 class ChryslerPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: {
-    Bus.pt: 'chrysler_pacifica_2017_hybrid_generated',
+    Bus.pt: 'chrysler_pacifica_2017_hybrid',
     Bus.radar: 'chrysler_pacifica_2017_hybrid_private_fusion',
   })
 
