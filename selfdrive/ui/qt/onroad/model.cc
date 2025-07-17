@@ -243,7 +243,6 @@ void ModelRenderer::updatePathGradient(QLinearGradient &bg) {
   bool has_lead = lead_one.getStatus();
   float plan_accel = plan.getATarget();
   float brake = sm["carState"].getCarState().getBrake();  // 0.0 to 1.0
-  bool brake_pressed = sm["carState"].getCarState().getBrakePressed();
   bool cruise_active = sm["carState"].getCarState().getCruiseState().getEnabled();
   bool gas_pressed = sm["carState"].getCarState().getGasPressed();
 
