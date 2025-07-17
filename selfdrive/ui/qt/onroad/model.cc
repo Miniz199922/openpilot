@@ -234,10 +234,43 @@ void ModelRenderer::updatePathGradient(QLinearGradient &bg) {
     blend_factor = std::min(blend_factor + transition_speed, 1.0f);
   }
 
-  // Set gradient colors by blending the start and end colors
-  bg.setColorAt(0.0f, blendColors(begin_colors[0], end_colors[0], blend_factor));
-  bg.setColorAt(0.5f, blendColors(begin_colors[1], end_colors[1], blend_factor));
-  bg.setColorAt(1.0f, blendColors(begin_colors[2], end_colors[2], blend_factor));
+  // === Check if braking behind a lead ===
+  const auto &sm = *uiState()->sm;
+  const auto &radar_state = sm["radarState"].getRadarState();
+  const auto &lead_one = radar_state.getLeadOne();
+
+  const auto &plan = sm["longitudinalPlan"].getLongitudinalPlan();
+  bool has_lead = lead_one.getStatus();
+  float plan_accel = plan.getATarget();
+  float brake = sm["carState"].getCarState().getBrake();  // 0.0 to 1.0
+  bool brake_pressed = sm["carState"].getCarState().getBrakePressed();
+  bool cruise_active = sm["carState"].getCarState().getCruiseState().getEnabled();
+  bool gas_pressed = sm["carState"].getCarState().getGasPressed();
+
+  bool op_braking_for_lead = cruise_active && !gas_pressed && has_lead && plan_accel < 0.0f && brake < 0.5f;
+
+  if (op_braking_for_lead) {
+  // Transition speed; 0.1 corresponds to 0.5 seconds at UI_FREQ
+    constexpr float max_expected_decel = 3.0f;
+    float decel_strength = std::clamp(-plan_accel / max_expected_decel, 0.0f, 1.0f);
+
+    float lightness = 0.5f - 0.3f * decel_strength;
+    float alpha_start = 0.4f + 0.3f * decel_strength;
+    float alpha_mid = 0.35f + 0.25f * decel_strength;
+    float alpha_end = 0.0f;
+
+    QColor red_start = QColor::fromHslF(0.0, 1.0, lightness, alpha_start);
+    QColor red_mid = QColor::fromHslF(0.0, 1.0, lightness, alpha_mid);
+    QColor red_end = QColor::fromHslF(0.0, 1.0, lightness, alpha_end);
+
+    bg.setColorAt(0.0f, red_start);
+    bg.setColorAt(0.5f, red_mid);
+    bg.setColorAt(1.0f, red_end);
+  } else {
+    bg.setColorAt(0.0f, blendColors(begin_colors[0], end_colors[0], blend_factor));
+    bg.setColorAt(0.5f, blendColors(begin_colors[1], end_colors[1], blend_factor));
+    bg.setColorAt(1.0f, blendColors(begin_colors[2], end_colors[2], blend_factor));
+  }
 }
 
 QColor ModelRenderer::blendColors(const QColor &start, const QColor &end, float t) {
