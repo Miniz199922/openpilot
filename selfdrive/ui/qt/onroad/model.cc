@@ -267,9 +267,10 @@ void ModelRenderer::updatePathGradient(QLinearGradient &bg) {
     bg.setColorAt(0.5f, red_mid);
     bg.setColorAt(1.0f, red_end);
   } else {
-    bg.setColorAt(0.0f, blendColors(begin_colors[0], end_colors[0], blend_factor));
-    bg.setColorAt(0.5f, blendColors(begin_colors[1], end_colors[1], blend_factor));
-    bg.setColorAt(1.0f, blendColors(begin_colors[2], end_colors[2], blend_factor));
+  // Set gradient colors by blending the start and end colors
+  bg.setColorAt(0.0f, blendColors(begin_colors[0], end_colors[0], blend_factor));
+  bg.setColorAt(0.5f, blendColors(begin_colors[1], end_colors[1], blend_factor));
+  bg.setColorAt(1.0f, blendColors(begin_colors[2], end_colors[2], blend_factor));
   }
 }
 
