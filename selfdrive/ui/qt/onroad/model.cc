@@ -246,7 +246,7 @@ void ModelRenderer::updatePathGradient(QLinearGradient &bg) {
   bool cruise_active = sm["carState"].getCarState().getCruiseState().getEnabled();
   bool gas_pressed = sm["carState"].getCarState().getGasPressed();
 
-  bool op_braking_for_lead = cruise_active && !gas_pressed && has_lead && plan_accel < 0.0f && brake < 0.5f;
+  bool op_braking_for_lead = cruise_active && !gas_pressed && has_lead && plan_accel < -0.4f && brake < -0.4f;
 
   if (op_braking_for_lead) {
   // Transition speed; 0.1 corresponds to 0.5 seconds at UI_FREQ
@@ -258,13 +258,13 @@ void ModelRenderer::updatePathGradient(QLinearGradient &bg) {
     float alpha_mid = 0.35f + 0.25f * decel_strength;
     float alpha_end = 0.0f;
 
-    QColor red_start = QColor::fromHslF(0.0, 1.0, lightness, alpha_start);
-    QColor red_mid = QColor::fromHslF(0.0, 1.0, lightness, alpha_mid);
-    QColor red_end = QColor::fromHslF(0.0, 1.0, lightness, alpha_end);
+    QColor start_color = QColor::fromHslF(0.33f, 1.0, lightness, alpha_start); // green
+    QColor mid_color   = QColor::fromHslF(0.1f, 1.0, lightness, alpha_mid);    // orange
+    QColor end_color   = QColor::fromHslF(0.0f, 1.0, lightness, alpha_end);    // red
 
-    bg.setColorAt(0.0f, red_start);
-    bg.setColorAt(0.5f, red_mid);
-    bg.setColorAt(1.0f, red_end);
+    bg.setColorAt(0.0f, start_color);
+    bg.setColorAt(0.5f, mid_color);
+    bg.setColorAt(1.0f, end_color);
   } else {
   // Set gradient colors by blending the start and end colors
   bg.setColorAt(0.0f, blendColors(begin_colors[0], end_colors[0], blend_factor));
