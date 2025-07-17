@@ -246,8 +246,12 @@ void ModelRenderer::updatePathGradient(QLinearGradient &bg) {
   bool cruise_active = sm["carState"].getCarState().getCruiseState().getEnabled();
   bool gas_pressed = sm["carState"].getCarState().getGasPressed();
 
-  bool op_braking_for_lead = cruise_active && !gas_pressed && has_lead && plan_accel < -0.4f && brake < -0.4f;
-
+  bool op_braking_for_lead = cruise_active &&
+                            !gas_pressed &&
+                            has_lead &&
+                            !brake_pressed &&
+                            plan_accel < -0.4f;
+  
   if (op_braking_for_lead) {
   // Transition speed; 0.1 corresponds to 0.5 seconds at UI_FREQ
     constexpr float max_expected_decel = 3.0f;
