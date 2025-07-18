@@ -249,22 +249,30 @@ void ModelRenderer::updatePathGradient(QLinearGradient &bg) {
   bool op_braking_for_lead = cruise_active && !gas_pressed && has_lead && plan_accel < 0.0f && brake < 0.5f;
   
   if (op_braking_for_lead) {
-  // Transition speed; 0.1 corresponds to 0.5 seconds at UI_FREQ
-    constexpr float max_expected_decel = 3.0f;
-    
-    float decel_strength = std::clamp(-plan_accel / max_expected_decel, 0.0f, 1.0f);
-float lightness = std::clamp(0.5f - 0.3f * decel_strength, 0.35f, 0.5f);
-float alpha_start = 0.4f + 0.3f * decel_strength;
-float alpha_mid   = 0.35f + 0.25f * decel_strength;
-float alpha_end   = 0.1f + 0.3f * decel_strength;
+  constexpr float max_expected_decel = 3.0f;
+  float decel_strength = std::clamp(-plan_accel / max_expected_decel, 0.0f, 1.0f);
 
-QColor start_color = QColor::fromHslF(0.33f, 1.0, lightness, alpha_start); // green
-QColor mid_color   = QColor::fromHslF(0.1f, 1.0, lightness, alpha_mid);    // orange
-QColor end_color   = QColor::fromHslF(0.0f, 1.0, lightness, alpha_end);    // red
+  // Match default green used in drawPath()
+  float base_green_hue = 112.f / 360.f;  // ≈ 0.311
+  float red_hue = 0.0f;
 
-bg.setColorAt(0.0f, start_color);
-bg.setColorAt(0.5f, mid_color);
-bg.setColorAt(1.0f, end_color);
+  // Interpolate hue from green to red
+  float hue = base_green_hue * (1.0f - decel_strength) + red_hue * decel_strength;
+  float saturation = 1.0f;
+  float lightness = std::clamp(0.68f - 0.2f * decel_strength, 0.48f, 0.68f);
+
+  float alpha_start = 0.4f + 0.3f * decel_strength;
+  float alpha_mid   = 0.35f + 0.25f * decel_strength;
+  float alpha_end   = 0.1f + 0.3f * decel_strength;
+
+  QColor start_color = QColor::fromHslF(hue, saturation, lightness, alpha_start);
+  QColor mid_color   = QColor::fromHslF(hue, saturation, lightness, alpha_mid);
+  QColor end_color   = QColor::fromHslF(hue, saturation, lightness, alpha_end);
+
+  bg.setColorAt(0.0f, start_color);
+  bg.setColorAt(0.5f, mid_color);
+  bg.setColorAt(1.0f, end_color);
+
   } else {
   // Set gradient colors by blending the start and end colors
   bg.setColorAt(0.0f, blendColors(begin_colors[0], end_colors[0], blend_factor));
