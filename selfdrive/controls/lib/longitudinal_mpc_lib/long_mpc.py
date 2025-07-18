@@ -339,7 +339,7 @@ class LongitudinalMpc:
     v_ego = self.x0[1]
     lead0_stopped = radarstate.leadOne.status and radarstate.leadOne.vLead < 0.5
     lead1_stopped = radarstate.leadTwo.status and radarstate.leadTwo.vLead < 0.5
-    if v_ego > 8.0:  # about 18 mph
+    if v_ego > 9.0:  # about 21 mph
       if lead0_stopped:
         radarstate.leadOne.status = False
       if lead1_stopped:
