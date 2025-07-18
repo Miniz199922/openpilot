@@ -335,6 +335,16 @@ class LongitudinalMpc:
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
+    # === Filter out stationary leads at higher speeds (radar-style behavior) ===
+    v_ego = self.x0[1]
+    lead0_stopped = radarstate.leadOne.status and radarstate.leadOne.vLead < 0.5
+    lead1_stopped = radarstate.leadTwo.status and radarstate.leadTwo.vLead < 0.5
+    if v_ego > 8.0:  # about 18 mph
+      if lead0_stopped:
+        radarstate.leadOne.status = False
+      if lead1_stopped:
+        radarstate.leadTwo.status = False
+    
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
