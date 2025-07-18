@@ -251,20 +251,20 @@ void ModelRenderer::updatePathGradient(QLinearGradient &bg) {
   if (op_braking_for_lead) {
   // Transition speed; 0.1 corresponds to 0.5 seconds at UI_FREQ
     constexpr float max_expected_decel = 3.0f;
+    
     float decel_strength = std::clamp(-plan_accel / max_expected_decel, 0.0f, 1.0f);
-
-    float lightness = 0.5f - 0.3f * decel_strength;
+float lightness = std::clamp(0.5f - 0.3f * decel_strength, 0.35f, 0.5f);
 float alpha_start = 0.4f + 0.3f * decel_strength;
 float alpha_mid   = 0.35f + 0.25f * decel_strength;
-float alpha_end   = 0.1f + 0.3f * decel_strength;  // ← WAS 0.0f
+float alpha_end   = 0.1f + 0.3f * decel_strength;
 
 QColor start_color = QColor::fromHslF(0.33f, 1.0, lightness, alpha_start); // green
 QColor mid_color   = QColor::fromHslF(0.1f, 1.0, lightness, alpha_mid);    // orange
-QColor end_color   = QColor::fromHslF(0.0f, 1.0, lightness, alpha_end);    // red (now visible)
-    
-    bg.setColorAt(0.0f, start_color);
-    bg.setColorAt(0.5f, mid_color);
-    bg.setColorAt(1.0f, end_color);
+QColor end_color   = QColor::fromHslF(0.0f, 1.0, lightness, alpha_end);    // red
+
+bg.setColorAt(0.0f, start_color);
+bg.setColorAt(0.5f, mid_color);
+bg.setColorAt(1.0f, end_color);
   } else {
   // Set gradient colors by blending the start and end colors
   bg.setColorAt(0.0f, blendColors(begin_colors[0], end_colors[0], blend_factor));
