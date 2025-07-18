@@ -249,7 +249,7 @@ void ModelRenderer::updatePathGradient(QLinearGradient &bg) {
   bool op_braking_for_lead = cruise_active && !gas_pressed && has_lead && plan_accel < 0.0f && brake < 0.5f;
   
   if (op_braking_for_lead) {
-  constexpr float max_expected_decel = 3.0f;
+  constexpr float max_expected_decel = 2.0f;
   float decel_strength = std::clamp(-plan_accel / max_expected_decel, 0.0f, 1.0f);
 
   // Match default green used in drawPath()
